@@ -37,7 +37,7 @@
               <td class="date">{{ l.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
               <td>@for (t of l.tags; track t) { <span class="badge">{{ t }}</span> {{ ' ' }} }</td>
               <td class="actions">
-                <a class="btn small" [href]="l.url" target="_blank" rel="noopener noreferrer" [attr.aria-label]="'Ouvrir ' + l.title">Ouvrir</a>
+                <a class="btn small" [routerLink]="['/link', l.id]" [attr.aria-label]="'Ouvrir la fiche de ' + l.title">Ouvrir</a>
                 <a class="btn small" [routerLink]="['/link', l.id, 'edit']" [attr.aria-label]="'Modifier ' + l.title">Modifier</a>
                 <button type="button" class="ghost danger small" (click)="remove(l)" [attr.aria-label]="'Supprimer ' + l.title">Supprimer</button>
               </td>

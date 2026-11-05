@@ -53,3 +53,7 @@
 - **Infra à prévoir** : le routage par chemins (`/table`, `/category/…`) exige que le reverse proxy renvoie `index.html` pour tout chemin inconnu (fallback SPA), sinon un rechargement de page donne une 404. Le bookmarklet ouvrira `/?url=…&title=…`.
 - Tests : API 24 ; front 58 (+1 test de bout en bout ignoré par défaut). Vérifié dans le navigateur : détection automatique, tri, modification, navigation, propagation de la modification jusqu'à l'API.
 - Non fait : renommage/fusion de catégories en masse ; pas de pagination du tableau ; pas testé sur Safari iOS.
+
+## 2026-11-05 — Fiche d'un lien
+- « Ouvrir » (tableau et cartes) ouvre maintenant la fiche du lien (`/link/:id`) : adresse, source, catégorie, étiquettes, note, capture, dates et historique des événements. Le site s'ouvre depuis « Aller au site » (nouvel onglet, `noopener noreferrer`). Le titre cliquable du tableau et des cartes ouvre toujours le site.
+- Vérifié dans le navigateur. L'historique affiché est celui du journal d'événements ; la vue historique chronologique globale reste la phase 6.

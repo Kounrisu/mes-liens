@@ -1,0 +1,49 @@
+<main class="page">
+  @if (!svc.ready()) {
+    <p>Chargement…</p>
+  } @else if (link(); as l) {
+    <article class="card detail" aria-labelledby="detail-h">
+      <div class="row">
+        <h2 id="detail-h">{{ l.title }}</h2>
+        <span class="spacer" style="flex:1"></span>
+        <a class="btn small primary-link" [href]="l.url" target="_blank" rel="noopener noreferrer">Aller au site ↗</a>
+        <a class="btn small" [routerLink]="['/link', l.id, 'edit']">Modifier</a>
+        <button type="button" class="ghost danger small" (click)="remove()">Supprimer</button>
+      </div>
+
+      @if (shot(); as src) {
+        <img class="detail-shot" [src]="src" alt="Capture d'écran de {{ l.title }}" />
+      }
+
+      <dl class="facts">
+        <dt>Adresse</dt>
+        <dd><a [href]="l.url" target="_blank" rel="noopener noreferrer">{{ l.url }}</a></dd>
+        <dt>Source</dt>
+        <dd>{{ l.source || '—' }} <span class="meta">({{ l.domain }})</span></dd>
+        <dt>Catégorie</dt>
+        <dd>@if (l.category) { <a class="badge cat" [routerLink]="['/category', l.category]">{{ l.category }}</a> } @else { — }</dd>
+        <dt>Étiquettes</dt>
+        <dd>@for (t of l.tags; track t) { <span class="badge">{{ t }}</span> {{ ' ' }} } @empty { — }</dd>
+        <dt>Note</dt>
+        <dd class="note">{{ l.note || '—' }}</dd>
+        <dt>Créé</dt>
+        <dd>{{ l.createdAt | date: 'dd/MM/yyyy HH:mm' }}</dd>
+        <dt>Modifié</dt>
+        <dd>{{ l.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</dd>
+      </dl>
+
+      <h3>Historique</h3>
+      <ol class="history">
+        @for (e of events(); track e.id) {
+          <li><span class="meta">{{ e.at | date: 'dd/MM/yyyy HH:mm' }}</span> {{ label(e) }} @if (detail(e)) { : <span class="badge">{{ detail(e) }}</span> }</li>
+        } @empty {
+          <li class="empty">Aucun événement.</li>
+        }
+      </ol>
+    </article>
+    <p><a [routerLink]="['/table']">← Retour au tableau</a></p>
+  } @else {
+    <p class="empty">Lien introuvable : il a peut-être été supprimé (ici ou sur un autre appareil).</p>
+    <p><a [routerLink]="['/table']">← Retour au tableau</a></p>
+  }
+</main>
