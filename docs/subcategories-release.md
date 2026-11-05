@@ -9,3 +9,5 @@ Les compteurs additionnent les descendants à chaque niveau. Le filtre Tableau s
 Validation : build Angular de production et contrôle des traductions ; tests de présence des dix thèmes à vide, conservation des catégories personnalisées, comptage des descendants et des suppressions, regroupement YouTube et filtrage hiérarchique du Tableau.
 
 Livraison frontend uniquement dans `releases/subcategories-v1`. Les scripts de déploiement et de vérification frontend acceptent maintenant un nom de livraison validé ; leur valeur par défaut reste `bilingual-v1`.
+
+Déployé le 5 novembre 2026 à 20 h 38 (Paris). Sauvegarde serveur `2026-11-05-1938`, fichiers déployés identiques au build testé, routes et API protégées par authentification. 144 tests frontend réussis, 2 tests préexistants ignorés. Tag local : `v0.3.1-subcategories` ; aucun push Git.
