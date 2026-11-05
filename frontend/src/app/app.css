@@ -61,3 +61,10 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .body h3 a:hover { text-decoration: underline; }
 .note { margin: 0; font-size: .9rem; white-space: pre-wrap; overflow-wrap: anywhere; }
 .body .danger { justify-self: start; }
+
+.sync { font-size: .85rem; padding: .15rem .6rem; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.sync.warn { color: #b26a00; border-color: #b26a00; }
+.sync.bad { color: var(--danger); border-color: var(--danger); }
+.sync-panel summary { cursor: pointer; font-weight: 600; }
+.sync-panel form { margin-top: .75rem; }
+.row { display: flex; gap: .5rem; flex-wrap: wrap; }

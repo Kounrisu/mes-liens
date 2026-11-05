@@ -1,6 +1,7 @@
 import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { ImportError, LinkService } from './core/link.service';
+import { SyncService } from './core/sync.service';
 import { isImage, shrinkImage } from './core/image';
 import { filterLinks, normalizeUrl, parseTags, tagCounts } from './core/link-utils';
 import { Link } from './core/models';
@@ -13,6 +14,12 @@ import { Link } from './core/models';
 })
 export class App implements OnInit {
   protected readonly svc = inject(LinkService);
+  protected readonly sync = inject(SyncService);
+
+  // réglages de synchro
+  protected readonly cfgUrl = signal('');
+  protected readonly cfgToken = signal('');
+  protected readonly cfgError = signal('');
 
   // formulaire
   protected readonly url = signal('');
@@ -32,6 +39,8 @@ export class App implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.svc.init();
+    await this.sync.init();
+    this.cfgUrl.set(this.sync.serverUrl());
     // Pré-remplissage par le bookmarklet / Raccourci iOS : ?url=…&title=… (le texte est affiché via {{ }}, jamais en HTML brut)
     const p = new URLSearchParams(window.location.search);
     const u = p.get('url');
@@ -129,6 +138,37 @@ export class App implements OnInit {
   protected resetFilters(): void {
     this.query.set('');
     this.activeTags.set([]);
+  }
+
+  // ---- synchronisation ----
+
+  protected async connect(e: Event): Promise<void> {
+    e.preventDefault();
+    try {
+      await this.sync.configure(this.cfgUrl(), this.cfgToken());
+      this.cfgToken.set('');
+      this.cfgError.set('');
+    } catch (err) {
+      this.cfgError.set(err instanceof Error ? err.message : 'Configuration invalide.');
+    }
+  }
+
+  protected async disconnect(): Promise<void> {
+    if (confirm('Déconnecter la synchronisation ? Les données locales sont conservées.')) {
+      await this.sync.disconnect();
+      this.cfgUrl.set('');
+    }
+  }
+
+  protected statusLabel(): string {
+    switch (this.sync.status()) {
+      case 'unconfigured': return 'Non synchronisé';
+      case 'syncing': return 'Synchronisation…';
+      case 'idle': return this.sync.pendingCount() ? `${this.sync.pendingCount()} à envoyer` : 'Synchronisé';
+      case 'offline': return 'Hors ligne';
+      case 'auth-error': return 'Jeton refusé';
+      default: return 'Erreur de synchro';
+    }
   }
 
   // ---- export / import ----

@@ -1,5 +1,6 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, afterEach, describe, expect, it } from 'vitest';
+import { openDB } from 'idb';
 import { ImportError, exportAll, exportToJson, importFromJson } from './backup';
 import { LinkStore } from './link-store';
 import { Link, LinkEvent } from './models';
@@ -70,6 +71,32 @@ describe('LinkStore', () => {
     await store.addEvent(event('e1', 'a', '2026-11-01T00:00:00.000Z'));
     await store.addEvent(event('e3', 'b', '2026-11-03T00:00:00.000Z'));
     expect((await store.listEvents('a')).map((e) => e.id)).toEqual(['e1', 'e2']);
+  });
+});
+
+describe('migration de la base', () => {
+  it('les données écrites avant la synchro (base v2) sont marquées à pousser à l’ouverture', async () => {
+    const name = `migr-${n++}`;
+    // base v2 telle que l'écrivait la phase 3 : stores links / events / screenshots, sans dirty ni meta
+    const v2 = await openDB(name, 2, {
+      upgrade(db) {
+        const l = db.createObjectStore('links', { keyPath: 'id' });
+        l.createIndex('by-updatedAt', 'updatedAt');
+        l.createIndex('by-createdAt', 'createdAt');
+        const e = db.createObjectStore('events', { keyPath: 'id' });
+        e.createIndex('by-linkId', 'linkId');
+        e.createIndex('by-at', 'at');
+        db.createObjectStore('screenshots', { keyPath: 'id' });
+      },
+    });
+    await v2.put('links', link('ancien'));
+    await v2.put('events', event('e-ancien', 'ancien', '2026-11-01T10:00:00.000Z'));
+    v2.close();
+
+    const migrated = await LinkStore.open(name);
+    expect((await migrated.listDirty()).map((d) => d.key).sort()).toEqual(['event:e-ancien', 'link:ancien']);
+    expect((await migrated.getLink('ancien'))?.title).toBe('Titre ancien'); // données intactes
+    migrated.close();
   });
 });
 

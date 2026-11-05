@@ -44,6 +44,10 @@ public class LinkEntity {
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
+    /** Attribué par trigger à chaque écriture ; sert de curseur de synchronisation. */
+    @Column(name = "server_seq", insertable = false, updatable = false)
+    private Long serverSeq;
+
     protected LinkEntity() {}
 
     public static LinkEntity from(LinkDto d) {
@@ -75,6 +79,7 @@ public class LinkEntity {
         return new LinkDto(id, url, title, domain, java.util.List.of(tags), note, screenshotId, createdAt, updatedAt, deletedAt);
     }
 
+    public Long getServerSeq() { return serverSeq; }
     public UUID getId() { return id; }
     public Instant getUpdatedAt() { return updatedAt; }
     public Instant getDeletedAt() { return deletedAt; }

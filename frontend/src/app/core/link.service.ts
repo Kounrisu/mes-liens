@@ -21,6 +21,12 @@ export class LinkService {
   readonly links = signal<Link[]>([]);
   readonly screenshotUrls = signal<Record<string, string>>({});
   readonly count = computed(() => this.links().length);
+  /** Incrémenté à chaque modification LOCALE (déclenche la synchro). Pas après une synchro. */
+  readonly localChanges = signal(0);
+
+  get storage(): LinkStore {
+    return this.need();
+  }
 
   async init(): Promise<void> {
     this.store = await LinkStore.open();
@@ -55,12 +61,14 @@ export class LinkService {
       await store.addEvent({ id: crypto.randomUUID(), linkId: id, type: 'screenshot_added', payload: { screenshotId }, at: now });
     }
     await this.refresh();
+    this.localChanges.update((n) => n + 1);
     return link;
   }
 
   async remove(id: string): Promise<void> {
     await this.need().softDeleteLink(id, new Date().toISOString());
     await this.refresh();
+    this.localChanges.update((n) => n + 1);
   }
 
   async exportJson(): Promise<string> {
@@ -70,7 +78,13 @@ export class LinkService {
   async importJson(json: string, mode: 'replace' | 'merge'): Promise<{ links: number; events: number }> {
     const r = await importFromJson(this.need(), json, mode);
     await this.refresh();
+    this.localChanges.update((n) => n + 1);
     return r;
+  }
+
+  /** Recharge la liste depuis IndexedDB (après une synchro). */
+  async reload(): Promise<void> {
+    await this.refresh();
   }
 
   private async refresh(): Promise<void> {

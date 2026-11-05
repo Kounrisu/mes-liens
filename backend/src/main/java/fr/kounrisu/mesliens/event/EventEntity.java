@@ -32,6 +32,9 @@ public class EventEntity {
     @Column(nullable = false)
     private Instant at;
 
+    @Column(name = "server_seq", insertable = false, updatable = false)
+    private Long serverSeq;
+
     protected EventEntity() {}
 
     public EventEntity(EventDto d) {
@@ -41,6 +44,8 @@ public class EventEntity {
         this.payload = d.payload();
         this.at = d.at();
     }
+
+    public Long getServerSeq() { return serverSeq; }
 
     public EventDto toDto() {
         return new EventDto(id, linkId, type, payload, at);
