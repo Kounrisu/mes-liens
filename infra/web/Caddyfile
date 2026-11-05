@@ -1,0 +1,18 @@
+# Serveur statique INTERNE de la PWA (le HTTPS est géré par le Caddy du serveur, devant celui-ci).
+{
+	admin off
+	auto_https off
+}
+
+:80 {
+	root * /srv
+	encode zstd gzip
+
+	# Le service worker et le manifeste ne doivent jamais être servis depuis un cache périmé (phase 5 : PWA).
+	@sw path /ngsw-worker.js /ngsw.json /manifest.webmanifest /index.html
+	header @sw Cache-Control "no-cache"
+
+	# Routes Angular (/table, /category/…, /link/…) : repli sur index.html, sinon un rechargement de page donnerait une 404.
+	try_files {path} /index.html
+	file_server
+}

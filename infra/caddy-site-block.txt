@@ -1,0 +1,18 @@
+# À AJOUTER à la fin de ~/proxy/Caddyfile sur le VPS (après en avoir fait une copie datée), puis recharger Caddy.
+# Prérequis : le DNS links.sn8w.com doit déjà pointer vers le VPS (sinon Let's Encrypt refuse le certificat).
+links.sn8w.com {
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+	}
+	handle /api/* {
+		request_body {
+			max_size 8MB # l'API refuse de toute façon au-delà de 5 Mo (captures d'écran)
+		}
+		reverse_proxy mesliens-api:8080
+	}
+	handle {
+		reverse_proxy mesliens-web:80
+	}
+}

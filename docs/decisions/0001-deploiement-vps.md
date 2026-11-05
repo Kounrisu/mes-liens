@@ -29,7 +29,7 @@ Observations hors périmètre (non touchées) : un certificat `lab.sn8w.com` exi
 
 **Caddy : une seule modification, un bloc ajouté** (après copie de sauvegarde datée du Caddyfile, comme les précédentes) :
 ```
-liens.sn8w.com {
+links.sn8w.com {
     handle /api/* { reverse_proxy mesliens-api:8080 }
     handle        { reverse_proxy mesliens-web:80 }
 }
@@ -46,12 +46,12 @@ Même origine pour la PWA et l'API : pas de CORS. `MESLIENS_TRUST_XFF=true` est 
 **Empreinte estimée** : ~300-400 Mo de RAM (JVM bornée + base + serveur statique), ~600 Mo de disque au départ. Tient dans les 1,6 Go disponibles ; la marge disque est plus serrée (voir questions).
 
 ## 3. À trancher avant tout déploiement
-1. **Sous-domaine** (proposition : `liens.sn8w.com`) et création de l'enregistrement DNS `A` → IP du VPS dans la zone OVH (je n'ai pas accès à OVH).
+1. ~~Sous-domaine~~ **Décidé : `links.sn8w.com`.** Reste la création de l'enregistrement DNS `A` → IP du VPS dans la zone OVH (je n'ai pas accès à OVH).
 2. **PostgreSQL 18** dans un conteneur dédié (recommandé) ou 16 pour s'aligner sur les autres.
 3. **Sauvegardes** : OK pour les mettre en place sur le serveur ?
 4. **Disque** : OK pour libérer ~5,5 Go en purgeant le cache de build Docker inutilisé (`docker builder prune`) — commande qui ne touche pas aux conteneurs ni aux volumes, mais à ne lancer qu'avec ton accord.
 
 ## 4. Points non vérifiés
-- Disponibilité de l'image `eclipse-temurin` pour Java 25 (à confirmer avant de figer ; sinon compiler pour Java 21, déjà présent sur le serveur).
+- ~~Image Java 25~~ vérifiée sur Docker Hub le 2026-11-05 : `eclipse-temurin:25-jre-alpine` (72 Mo), `postgres:18-alpine`, `caddy:2-alpine` existent.
 - Mises à jour de sécurité automatiques du système (`unattended-upgrades`) non vérifiées.
 - Aucun test de charge ; le serveur est partagé avec 7 autres applications.

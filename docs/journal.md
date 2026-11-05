@@ -102,3 +102,12 @@
 - Faits marquants : Caddy partagé + un PostgreSQL 16 par application en conteneur ; 1,6 Go de RAM disponibles sans swap ; disque à 80 % ; **aucune sauvegarde automatique** ; pas de DNS générique (enregistrement A à créer chez OVH).
 - Décision proposée : conteneurs dédiés (PostgreSQL 18, API, serveur statique), un seul bloc ajouté au Caddyfile + `caddy reload` (sans coupure), builds sur le PC, secrets générés sur le VPS.
 - Non vérifié : image Java 25 disponible ; mises à jour automatiques du système.
+
+## 2026-11-05 — Déploiement : sous-domaine choisi, fichiers `infra/` prêts (rien déployé)
+- **Décision** : `links.sn8w.com` (corrigé : j'avais d'abord compris « liens »). DNS pas encore créé (vérifié : aucun enregistrement).
+- Images vérifiées sur Docker Hub : `eclipse-temurin:25-jre-alpine` (72 Mo), `postgres:18-alpine`, `caddy:2-alpine` → Java 25 conservé, pas de repli sur 21.
+- `infra/` : compose de prod (3 conteneurs, réseau privé pour la base, aucun port publié, volumes nommés, limites mémoire, JVM bornée à 256 Mo), Dockerfile API (utilisateur non-root, JRE seul), Caddyfile statique interne (repli SPA, `no-cache` pour le futur service worker), bloc à ajouter au Caddy du serveur (HSTS, limite de corps 8 Mo), `backup.sh`, `.env.prod.example` (sans valeurs), `README.md` (procédure pas à pas : ce que chaque commande modifie et comment annuler).
+- **Répétition générale en local** avec de faux secrets (même compose, mêmes images) : PostgreSQL 18.6, 5 migrations appliquées, API healthy en 6 s, repli SPA 200, sans jeton 401, http clair 403, bon jeton OK, base injoignable depuis le conteneur web, volume captures écrivable en non-root, `POST /api/sync/links` OK, `backup.sh` OK et **restauration vérifiée** (lien restauré dans une base vierge), mémoire ≈ 300 Mo. Tout nettoyé ensuite (conteneurs, volumes, réseau local).
+- Bug évité en passant : `.gitignore` masquait `.env.prod.example` (règle `.env.*`) → exception `!.env.*.example`.
+- Sécurité : `MESLIENS_TRUST_XFF=true` est sûr uniquement parce que Caddy réécrit `X-Forwarded-*` ; si un autre proxy est un jour ajouté devant, à revoir (risque réel : contournement de la limite de débit).
+- Non fait : DNS (à créer chez OVH), planification des sauvegardes (timer systemd, `crontab` absent du serveur), purge du cache Docker, première exécution sur le VPS.

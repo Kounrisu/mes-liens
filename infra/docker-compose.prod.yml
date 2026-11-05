@@ -1,0 +1,65 @@
+# mes-liens — production (VPS). NE CONTIENT AUCUN SECRET : tout vient de .env.prod (créé sur le serveur, jamais commité).
+# Trois conteneurs, indépendants des autres applications du serveur.
+name: mes-liens
+
+services:
+  db:
+    image: postgres:18-alpine
+    container_name: mesliens-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mesliens
+      POSTGRES_USER: mesliens
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD manquant dans .env.prod}
+    volumes:
+      - pgdata:/var/lib/postgresql # PostgreSQL 18+ : le dossier de données est versionné sous ce point de montage
+    networks: [internal] # réseau privé : aucun accès depuis Caddy ni depuis les autres applications ; aucun port publié
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mesliens -d mesliens"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    mem_limit: 256m
+
+  api:
+    build: ./api
+    container_name: mesliens-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://mesliens-db:5432/mesliens
+      DB_USER: mesliens
+      DB_PASSWORD: ${DB_PASSWORD:?}
+      MESLIENS_TOKEN: ${MESLIENS_TOKEN:?MESLIENS_TOKEN manquant dans .env.prod}
+      MESLIENS_REQUIRE_HTTPS: "true"
+      # Sûr ici : Caddy réécrit X-Forwarded-For / X-Forwarded-Proto (un client ne peut pas les forger).
+      MESLIENS_TRUST_XFF: "true"
+      MESLIENS_SCREENSHOTS_DIR: /data/screenshots
+      # Même origine (PWA et API sur le même domaine) : pas de CORS.
+      JAVA_TOOL_OPTIONS: "-Xmx256m -XX:+ExitOnOutOfMemoryError"
+    volumes:
+      - screenshots:/data/screenshots
+    networks: [internal, web] # internal : vers la base ; web : pour que Caddy joigne l'API
+    mem_limit: 400m
+
+  web:
+    image: caddy:2-alpine # même image que le proxy du serveur (déjà présente, rien à télécharger)
+    container_name: mesliens-web
+    restart: unless-stopped
+    volumes:
+      - ./web/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./web/dist:/srv:ro
+    networks: [web]
+    mem_limit: 64m
+
+networks:
+  internal:
+    internal: true
+  web:
+    external: true # réseau partagé existant, utilisé par le Caddy du serveur
+
+volumes:
+  pgdata:
+  screenshots:
