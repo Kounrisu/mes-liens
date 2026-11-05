@@ -23,6 +23,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Un lien tel qu'écrit dans links.json. Les champs optionnels absents à l'import = on garde la valeur actuelle. */
 export interface ZipLink {
   library?: LibraryData;
+  favorite?: boolean;
   id?: string;
   url: string;
   title?: string;
@@ -110,6 +111,7 @@ Cette archive contient tes liens. Tu peux la donner à une IA (ou l'éditer à l
 | \`kind\` | \`link\` (lien ordinaire) ou \`site\` (une plateforme à laquelle on rattache des liens). |
 | \`parentId\` | \`id\` du site auquel le lien est rattaché, ou null. Un site n'a pas de parent. |
 | \`focusRank\` | Rang dans la page Focus (1 = en tête), ou null si le lien n'est pas dans le Focus. |
+| \`favorite\` | Booléen : favori indépendant du Focus. Si absent, conserve la valeur actuelle. |
 | \`screenshot\` | Chemin d'une image de l'archive, ou null pour retirer la capture. Une image de plus ≤ 5 Mo peut être ajoutée dans \`screenshots/\`. |
 | \`createdAt\`, \`updatedAt\` | Dates ISO 8601. \`updatedAt\` est recalculé à l'import pour les liens modifiés. |
 | \`deleted\` | \`true\` pour supprimer le lien. |
@@ -153,6 +155,7 @@ export async function exportZip(
       parentId: l.parentId,
       focusRank: l.focusRank,
       library: l.library,
+      favorite: l.favorite,
       screenshot,
       createdAt: l.createdAt,
       updatedAt: l.updatedAt,
@@ -429,6 +432,11 @@ export async function planZipImport(
     }
 
     let library = existing?.library;
+    let favorite = existing?.favorite;
+    if (e['favorite'] !== undefined) {
+      if (typeof e['favorite'] !== 'boolean') err('favori invalide.');
+      else favorite = e['favorite'];
+    }
     if (e['library'] !== undefined) {
       try {
         library = validateLibrary(e['library']);
@@ -438,6 +446,7 @@ export async function planZipImport(
     }
     const next: Link = {
       ...(library ? { library } : {}),
+      ...(favorite !== undefined ? { favorite } : {}),
       id,
       url,
       title: title.trim() || domainOf(url) || url,
@@ -470,6 +479,7 @@ export async function planZipImport(
     if (next.note !== existing.note) fields.push('note');
     if (next.category !== existing.category) fields.push('catégorie');
     if (next.source !== existing.source) fields.push('source');
+    if (!!next.favorite !== !!existing.favorite) fields.push('favori');
     if (!sameTags(next.tags, existing.tags)) fields.push('étiquettes');
     if (next.kind !== existing.kind) fields.push('type');
     if (next.parentId !== existing.parentId) fields.push('site parent');

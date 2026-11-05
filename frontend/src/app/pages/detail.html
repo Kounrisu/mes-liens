@@ -9,7 +9,7 @@
         <a class="btn small primary-link" [href]="l.url" target="_blank" rel="noopener noreferrer"
           >Aller au site ↗</a
         >
-        <app-focus-button [link]="l" />
+        <app-favorite-button [link]="l" /><app-focus-button [link]="l" />
         <a class="btn small" [routerLink]="['/link', l.id, 'edit']">Modifier</a>
         <button type="button" class="ghost danger small" (click)="remove()">Supprimer</button>
       </div>

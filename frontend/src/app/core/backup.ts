@@ -84,6 +84,8 @@ function validateLink(v: unknown, i: number): Link {
   const str = (k: string) => reqString(v, k, where);
   const date = (k: string) => reqDate(v, k, where);
   const tags = v['tags'];
+  if (v['favorite'] !== undefined && typeof v['favorite'] !== 'boolean')
+    throw new ImportError(`${where} : favori invalide.`);
   if (!Array.isArray(tags) || tags.some((t) => typeof t !== 'string'))
     throw new ImportError(`${where} : tags invalides.`);
   const screenshotId = v['screenshotId'];
@@ -111,6 +113,7 @@ function validateLink(v: unknown, i: number): Link {
     kind: optKind(v, where),
     parentId: optParent(v, where),
     ...(v['library'] !== undefined ? { library: validateLibrary(v['library']) } : {}),
+    ...(v['favorite'] !== undefined ? { favorite: v['favorite'] as boolean } : {}),
     createdAt: date('createdAt'),
     updatedAt: date('updatedAt'),
     deletedAt: deletedAt as string | null,

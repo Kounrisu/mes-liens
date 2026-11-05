@@ -1,3 +1,4 @@
+import { FavoriteButton } from '../shared/favorite-button';
 import { libraryOf, LEARNING_STATES } from '../core/library';
 import { LinkInsight } from '../shared/link-insight';
 import { Component, computed, inject } from '@angular/core';
@@ -12,7 +13,7 @@ import { FocusButton } from '../shared/focus-button';
 /** Tableau de bord : mes favoris à apprendre, classés par rang, et un aperçu de la collection. */
 @Component({
   selector: 'app-focus',
-  imports: [DatePipe, RouterLink, FocusButton, LinkInsight],
+  imports: [FavoriteButton, DatePipe, RouterLink, FocusButton, LinkInsight],
   templateUrl: './focus.html',
 })
 export class FocusPage {

@@ -63,6 +63,22 @@ class ApiIntegrationTests {
     // ---- liens ----
 
     @Test
+    void favoritePersistsAcrossOldClientUpdatesAndCanBeRemoved() throws Exception {
+        UUID id = UUID.randomUUID();
+        String favorite = link(id, "Favorite", "2026-11-01T10:00:00Z", null)
+                .replace("\"screenshotId\":null,", "\"screenshotId\":null,\"favorite\":true,");
+        mvc.perform(authed(put("/api/links/" + id)).contentType(MediaType.APPLICATION_JSON).content(favorite))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.favorite").value(true));
+        mvc.perform(authed(put("/api/links/" + id)).contentType(MediaType.APPLICATION_JSON)
+                .content(link(id, "Old client edit", "2026-11-01T11:00:00Z", null)))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.favorite").value(true));
+        mvc.perform(authed(get("/api/links/" + id))).andExpect(jsonPath("$.favorite").value(true));
+        mvc.perform(authed(put("/api/links/" + id)).contentType(MediaType.APPLICATION_JSON)
+                .content(favorite.replace("10:00:00", "12:00:00").replace("\"favorite\":true", "\"favorite\":false")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.favorite").value(false));
+    }
+
+    @Test
     void creation_201_puis_relecture() throws Exception {
         UUID id = UUID.randomUUID();
         mvc.perform(authed(put("/api/links/" + id)).contentType(MediaType.APPLICATION_JSON)

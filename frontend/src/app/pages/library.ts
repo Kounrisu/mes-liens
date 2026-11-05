@@ -164,6 +164,7 @@ export class LibraryPage {
   readonly views = [
     { id: 'inbox', label: 'À trier' },
     { id: 'all', label: 'Tous les liens' },
+    { id: 'favorites', label: '★ Favoris' },
     { id: 'active', label: 'En cours' },
     { id: 'review', label: 'À revoir' },
     { id: 'knowledge', label: 'Connaissances' },
@@ -195,6 +196,7 @@ export class LibraryPage {
       const b = libraryOf(l);
       if (view === 'archive') return b.archived;
       if (b.archived) return false;
+      if (view === 'favorites') return !!l.favorite;
       const i = this.insights.records()[l.id];
       return view === 'inbox'
         ? !b.reviewed

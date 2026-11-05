@@ -1,3 +1,5 @@
+import { FavoriteButton } from './favorite-button';
+import { SelectionToolbar, toggleSelection } from './selection-toolbar';
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -12,13 +14,22 @@ const NO_SOURCE = 'sans source';
 /** Vues compactes : liste d'une ligne par lien, ou regroupement par source (Udemy, YouTube…). */
 @Component({
   selector: 'app-link-rows',
-  imports: [DatePipe, NgTemplateOutlet, RouterLink, FocusButton],
+  imports: [FavoriteButton, SelectionToolbar, DatePipe, NgTemplateOutlet, RouterLink, FocusButton],
   template: `
     <div class="filters">
-      <input type="search" placeholder="Rechercher…" aria-label="Rechercher" [value]="query()" (input)="setQuery(val($event))" />
+      <input
+        type="search"
+        placeholder="Rechercher…"
+        aria-label="Rechercher"
+        [value]="query()"
+        (input)="setQuery(val($event))"
+      />
     </div>
-    <p class="meta" aria-live="polite">{{ visible().length }} lien{{ visible().length > 1 ? 's' : '' }}</p>
+    <p class="meta" aria-live="polite">
+      {{ visible().length }} lien{{ visible().length > 1 ? 's' : '' }}
+    </p>
 
+    <app-selection-toolbar [links]="visible()" [shown]="shown()" [(selected)]="selected" />
     @if (!svc.ready()) {
       <p>Chargement…</p>
     } @else if (visible().length === 0) {
@@ -28,7 +39,9 @@ const NO_SOURCE = 'sans source';
     @if (grouped()) {
       @for (g of groups(); track g.name) {
         <details class="group" open>
-          <summary>{{ g.name }} <small class="meta">{{ g.items.length }}</small></summary>
+          <summary>
+            {{ g.name }} <small class="meta">{{ g.items.length }}</small>
+          </summary>
           <ul class="rows">
             @for (l of g.items; track l.id) {
               <ng-container *ngTemplateOutlet="row; context: { $implicit: l }" />
@@ -44,24 +57,52 @@ const NO_SOURCE = 'sans source';
       </ul>
     }
     @if (visible().length > shown().length) {
-      <p class="more"><button type="button" (click)="more()">Afficher plus ({{ visible().length - shown().length }} restants)</button></p>
+      <p class="more">
+        <button type="button" (click)="more()">
+          Afficher plus ({{ visible().length - shown().length }} restants)
+        </button>
+      </p>
     }
 
     <ng-template #row let-l>
-      <li class="rowitem">
+      <li class="rowitem" [class.picked]="selected().has(l.id)">
+        <input
+          class="selection-check"
+          type="checkbox"
+          [checked]="selected().has(l.id)"
+          (change)="toggle(l.id)"
+          [attr.aria-label]="'Sélectionner ' + l.title"
+        />
         <a class="t" [href]="l.url" target="_blank" rel="noopener noreferrer">{{ l.title }}</a>
-        @if (l.kind === 'site') { <span class="badge">site</span> }
-        <span class="meta">{{ grouped() ? l.domain : l.source || l.domain }} · {{ l.createdAt | date: 'dd/MM/yyyy' }}</span>
-        @for (t of l.tags; track t) { <span class="badge">{{ t }}</span> }
+        @if (l.kind === 'site') {
+          <span class="badge">site</span>
+        }
+        <span class="meta"
+          >{{ grouped() ? l.domain : l.source || l.domain }} ·
+          {{ l.createdAt | date: 'dd/MM/yyyy' }}</span
+        >
+        @for (t of l.tags; track t) {
+          <span class="badge">{{ t }}</span>
+        }
         <span class="spacer"></span>
-        <a class="btn small" [routerLink]="['/link', l.id]" [attr.aria-label]="'Ouvrir la fiche de ' + l.title">Ouvrir</a>
-        <app-focus-button [link]="l" />
+        <a
+          class="btn small"
+          [routerLink]="['/link', l.id]"
+          [attr.aria-label]="'Ouvrir la fiche de ' + l.title"
+          >Ouvrir</a
+        >
+        <app-favorite-button [link]="l" /><app-focus-button [link]="l" />
       </li>
     </ng-template>
   `,
 })
 export class LinkRows {
   protected readonly svc = inject(LinkService);
+
+  protected readonly selected = signal<ReadonlySet<string>>(new Set());
+  protected toggle(id: string): void {
+    this.selected.update((s) => toggleSelection(s, id));
+  }
 
   readonly links = input.required<Link[]>();
   /** true : regroupé par source ; false : simple liste. */
@@ -80,11 +121,18 @@ export class LinkRows {
     }
     return [...by]
       .map(([name, items]) => ({ name, items }))
-      .sort((a, b) => (a.name === NO_SOURCE ? 1 : b.name === NO_SOURCE ? -1 : a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' })));
+      .sort((a, b) =>
+        a.name === NO_SOURCE
+          ? 1
+          : b.name === NO_SOURCE
+            ? -1
+            : a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }),
+      );
   });
 
   protected setQuery(v: string): void {
     this.query.set(v);
+    this.selected.set(new Set());
     this.limit.set(PAGE_SIZE);
   }
 

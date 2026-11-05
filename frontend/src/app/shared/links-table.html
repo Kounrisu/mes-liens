@@ -24,74 +24,7 @@
     <button type="button" class="ghost" (click)="resetFilters()">Effacer les filtres</button>
   }
 </div>
-<div class="row batch" role="group" aria-label="Actions sur la sélection">
-  <p class="meta" aria-live="polite">
-    {{ rows().length }} lien{{ rows().length > 1 ? 's' : '' }}
-    @if (picked().length) {
-      · <strong>{{ picked().length }} sélectionné{{ picked().length > 1 ? 's' : '' }}</strong>
-    }
-  </p>
-  <button type="button" (click)="toggleAll()" [disabled]="!rows().length">
-    {{ allPicked() ? 'Tout désélectionner' : 'Tout sélectionner (' + rows().length + ')' }}
-  </button>
-  <button type="button" class="ghost danger" [disabled]="!picked().length" (click)="removePicked()">
-    Supprimer la sélection ({{ picked().length }})
-  </button>
-</div>
-
-@if (picked().length) {
-  <fieldset class="card batch-editor" [disabled]="busy()">
-    <legend>Organiser {{ picked().length }} lien(s)</legend>
-    <div class="cols">
-      <label
-        >Catégorie à attribuer<input
-          type="text"
-          [value]="batchCategory()"
-          (input)="batchCategory.set(val($event))"
-          placeholder="développement / angular"
-      /></label>
-      <label
-        >Étiquettes à ajouter<input
-          type="text"
-          [value]="batchTags()"
-          (input)="batchTags.set(val($event))"
-          placeholder="signals, exercices"
-      /></label>
-      <label
-        >Collection à ajouter<input
-          type="text"
-          maxlength="100"
-          [value]="batchCollection()"
-          (input)="batchCollection.set(val($event))"
-      /></label>
-    </div>
-    <p class="meta">
-      Les champs vides conservent les valeurs actuelles. Les étiquettes et collections sont
-      ajoutées.
-    </p>
-    <div class="row">
-      <button
-        type="button"
-        class="primary"
-        [disabled]="!batchCategory().trim() && !batchTags().trim() && !batchCollection().trim()"
-        (click)="classify('classify')"
-      >
-        Appliquer le classement
-      </button>
-      <button type="button" (click)="classify('review')">Marquer comme triés</button>
-      <button type="button" (click)="classify('inbox')">Remettre à trier</button>
-      <button type="button" (click)="classify('archive')">Archiver</button>
-      <button type="button" (click)="classify('restore')">Désarchiver</button>
-      <button type="button" (click)="checkSelected()">Vérifier les liens</button>
-    </div>
-  </fieldset>
-}
-@if (message()) {
-  <p role="status">{{ message() }}</p>
-}
-@if (failure()) {
-  <p class="error" role="alert">{{ failure() }}</p>
-}
+<app-selection-toolbar [links]="rows()" [shown]="shownRows()" [(selected)]="selected" />
 <div class="table-wrap" tabindex="0" role="region" aria-label="Tableau des liens">
   <table>
     <thead>
@@ -101,6 +34,7 @@
             type="checkbox"
             aria-label="Sélectionner tous les liens filtrés"
             [checked]="allPicked()"
+            [indeterminate]="picked().length > 0 && !allPicked()"
             [disabled]="!rows().length"
             (change)="toggleAll()"
           />
@@ -172,7 +106,7 @@
               [attr.aria-label]="'Ouvrir la fiche de ' + l.title"
               >Ouvrir</a
             >
-            <app-focus-button [link]="l" />
+            <app-favorite-button [link]="l" /><app-focus-button [link]="l" />
             <a
               class="btn small"
               [routerLink]="['/link', l.id, 'edit']"

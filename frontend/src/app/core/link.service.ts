@@ -18,6 +18,7 @@ import { LibraryData, libraryOf, validateLibrary, categoryWithin } from './libra
 
 /** Tout ce qui se saisit sur un lien. `url` est déjà normalisé (http/https). */
 export interface LinkFields {
+  favorite?: boolean;
   library?: LibraryData;
   url: string;
   title: string;
@@ -89,6 +90,7 @@ export class LinkService {
       category: normalizeCategory(n.category) || parent?.category || detected?.category || '',
       source: n.source.trim() || parent?.title || detected?.source || '',
       focusRank: null,
+      favorite: n.favorite ?? false,
       kind: n.kind,
       parentId: n.kind === 'site' ? null : n.parentId,
       createdAt: now,
@@ -128,6 +130,7 @@ export class LinkService {
 
     const after: Link = {
       ...before,
+      favorite: f.favorite ?? before.favorite,
       url: f.url,
       title: f.title.trim() || domainOf(f.url) || f.url,
       domain: domainOf(f.url),
@@ -165,6 +168,8 @@ export class LinkService {
     patch: {
       category?: string;
       tags?: string[];
+      removeTags?: string[];
+      favorite?: boolean;
       collection?: string;
       library?: Partial<LibraryData>;
     },
@@ -178,10 +183,17 @@ export class LinkService {
           ? [...new Set([...lib.collections, patch.collection.trim()])]
           : lib.collections,
       });
-      const tags = patch.tags ? [...new Set([...l.tags, ...patch.tags])] : l.tags;
+      const tags = [...new Set([...l.tags, ...(patch.tags ?? [])])].filter(
+        (tag) => !patch.removeTags?.includes(tag),
+      );
       if (tags.length > 50) throw new Error('Un lien ne peut pas avoir plus de 50 étiquettes.');
+      if (tags.some((t) => !t.trim() || t.length > 64))
+        throw new Error('Étiquette invalide (64 caractères maximum).');
+      if (patch.category !== undefined && normalizeCategory(patch.category).length > 200)
+        throw new Error('Catégorie trop longue (200 caractères maximum).');
       return {
         ...l,
+        ...(patch.favorite !== undefined ? { favorite: patch.favorite } : {}),
         category: patch.category === undefined ? l.category : normalizeCategory(patch.category),
         tags,
         library,

@@ -28,6 +28,25 @@ beforeEach(async () => {
   await svc.init();
 });
 describe('bibliothèque', () => {
+  it('keeps favorites independent of Focus through editing, JSON and ZIP backups', async () => {
+    const l = await svc.add(fields);
+    await svc.classifyMany([l.id], { favorite: true });
+    await svc.update(l.id, { ...fields, title: 'Edited' });
+    expect(svc.find(l.id)).toMatchObject({ favorite: true, focusRank: null });
+    const json = await svc.exportJson();
+    await svc.importJson(json, 'replace');
+    expect(svc.find(l.id)?.favorite).toBe(true);
+    const zip = await svc.exportZipBytes();
+    await svc.classifyMany([l.id], { favorite: false });
+    const plan = await svc.planZip(zip);
+    expect(plan.errors).toEqual([]);
+    expect(plan.updated[0].fields).toContain('favori');
+    await svc.applyZip(plan, { deleteMissing: false });
+    expect(svc.find(l.id)?.favorite).toBe(true);
+    const bad = JSON.parse(json);
+    bad.links[0].favorite = 'yes';
+    await expect(svc.importJson(JSON.stringify(bad), 'replace')).rejects.toThrow(/favori/);
+  });
   it('keeps auto-categorized new links in inbox and persists learning data through JSON and ZIP', async () => {
     const l = await svc.add({ ...fields, url: 'https://udemy.com/course/x', category: '' });
     expect(l.category).toBe('formation');

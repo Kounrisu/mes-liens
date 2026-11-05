@@ -26,7 +26,8 @@ public record LinkDto(
         @NotNull Instant createdAt,
         @NotNull Instant updatedAt,
         Instant deletedAt,
-        @jakarta.validation.Valid LibraryData library) {
+        @jakarta.validation.Valid LibraryData library,
+        Boolean favorite) {
 
     /** Tolérant : un ancien client qui n'envoie pas category/source reçoit une chaîne vide (pas une erreur). */
     public LinkDto {

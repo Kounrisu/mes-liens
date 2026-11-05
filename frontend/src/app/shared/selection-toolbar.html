@@ -1,0 +1,134 @@
+<fieldset class="selection-bar" [disabled]="busy()">
+  <legend class="sr-only">Actions sur la sélection</legend>
+  <div class="row batch">
+    <p class="meta" aria-live="polite">
+      <strong>{{ picked().length }} sélectionné(s)</strong> sur {{ links().length }} liens
+    </p>
+    @if (shown().length < links().length) {
+      <button type="button" class="small" [disabled]="!shown().length" (click)="select(false)">
+        Sélectionner les {{ shown().length }} affichés
+      </button>
+    }
+    <button type="button" class="small" [disabled]="!links().length" (click)="select(true)">
+      Tout sélectionner ({{ links().length }})
+    </button>
+    @if (picked().length) {
+      <button type="button" class="small ghost" (click)="clear()">Désélectionner</button>
+    }
+  </div>
+  @if (picked().length) {
+    <div class="row">
+      <button type="button" [attr.aria-expanded]="panel() === 'tags'" (click)="open('tags')">
+        Étiquettes
+      </button>
+      <button
+        type="button"
+        [attr.aria-expanded]="panel() === 'category'"
+        (click)="open('category')"
+      >
+        Catégorie
+      </button>
+      <button type="button" (click)="apply('favorite')">★ Ajouter aux favoris</button>
+      <button type="button" (click)="apply('unfavorite')">Retirer des favoris</button>
+      <button
+        type="button"
+        [attr.aria-expanded]="panel() === 'collection'"
+        (click)="open('collection')"
+      >
+        Collection
+      </button>
+      <details class="selection-more">
+        <summary>Autres actions</summary>
+        <div class="row">
+          <button type="button" (click)="apply('review')">Marquer comme triés</button>
+          <button type="button" (click)="apply('inbox')">Remettre à trier</button>
+          <button type="button" (click)="apply('archive')">Archiver</button>
+          <button type="button" (click)="apply('restore')">Désarchiver</button>
+          <button type="button" (click)="apply('check')">Vérifier les liens</button>
+          <button type="button" class="danger" (click)="apply('delete')">
+            Supprimer la sélection
+          </button>
+        </div>
+      </details>
+    </div>
+    @if (panel()) {
+      <div class="selection-editor">
+        <label
+          >{{
+            panel() === 'tags'
+              ? 'Étiquettes (séparées par des virgules)'
+              : panel() === 'category'
+                ? 'Catégorie / sous-catégorie'
+                : 'Collection à ajouter'
+          }}
+          <input
+            type="text"
+            [value]="value()"
+            (input)="value.set(text($event))"
+            [attr.list]="'batch-' + panel()"
+            [maxLength]="panel() === 'category' ? 200 : panel() === 'collection' ? 100 : 3250"
+          />
+        </label>
+        <datalist id="batch-tags">
+          @for (t of tags(); track t.tag) {
+            <option [value]="t.tag"></option>
+          }
+        </datalist>
+        <datalist id="batch-category">
+          @for (c of categories(); track c) {
+            <option [value]="c"></option>
+          }
+        </datalist>
+        <datalist id="batch-collection">
+          @for (c of collections(); track c) {
+            <option [value]="c"></option>
+          }
+        </datalist>
+        <div class="row">
+          @if (panel() === 'tags') {
+            <button
+              type="button"
+              class="primary"
+              [disabled]="!value().trim()"
+              (click)="apply('tags')"
+            >
+              Ajouter les étiquettes
+            </button>
+            <button type="button" [disabled]="!value().trim()" (click)="apply('removeTags')">
+              Retirer les étiquettes
+            </button>
+          } @else if (panel() === 'category') {
+            <button
+              type="button"
+              class="primary"
+              [disabled]="!value().trim()"
+              (click)="apply('category')"
+            >
+              Attribuer la catégorie
+            </button>
+            <button type="button" (click)="apply('clearCategory')">Retirer la catégorie</button>
+          } @else {
+            <button
+              type="button"
+              class="primary"
+              [disabled]="!value().trim()"
+              (click)="apply('collection')"
+            >
+              Ajouter à la collection
+            </button>
+          }
+          <button type="button" class="ghost" (click)="panel.set('')">Fermer</button>
+        </div>
+      </div>
+    }
+  }
+</fieldset>
+@if (busy()) {
+  <p role="status">Modification en cours…</p>
+}
+@if (message()) {
+  <p role="status">{{ message() }}</p>
+}
+@if (error()) {
+  <p class="error" role="alert">{{ error() }}</p>
+}

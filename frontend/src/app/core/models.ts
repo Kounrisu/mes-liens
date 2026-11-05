@@ -2,6 +2,7 @@
 export type LinkKind = 'link' | 'site';
 
 export interface Link {
+  favorite?: boolean;
   library?: import('./library').LibraryData;
   id: string;
   url: string;

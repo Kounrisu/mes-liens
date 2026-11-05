@@ -50,6 +50,46 @@
         }
       </select>
     </label>
+    <p class="meta">
+      La source est un nom libre. Pour la retrouver dans cette liste, enregistre-la comme site.
+    </p>
+    <button type="button" class="ghost" (click)="openSiteCreator()" [disabled]="siteBusy()">
+      + Créer un site depuis la source
+    </button>
+    @if (creatingSite()) {
+      <fieldset class="card" [disabled]="siteBusy()">
+        <legend>Nouveau site / plateforme</legend>
+        <div class="cols">
+          <label
+            >Nom du site<input
+              type="text"
+              maxlength="100"
+              [value]="siteName()"
+              (input)="siteName.set(val($event))"
+          /></label>
+          <label
+            >Adresse du site<input
+              type="text"
+              inputmode="url"
+              placeholder="https://…"
+              [value]="siteUrl()"
+              (input)="siteUrl.set(val($event))"
+          /></label>
+        </div>
+        <p class="meta">
+          Le site sera enregistré immédiatement et sélectionné pour ce lien. Vérifie son adresse.
+        </p>
+        <div class="row">
+          <button type="button" class="primary" (click)="createSite()">
+            {{ siteBusy() ? 'Enregistrement…' : 'Créer le site et le sélectionner' }}
+          </button>
+          <button type="button" (click)="creatingSite.set(false)">Annuler</button>
+        </div>
+        @if (siteError()) {
+          <p class="error" role="alert">{{ siteError() }}</p>
+        }
+      </fieldset>
+    }
   }
 
   <div class="cols">
@@ -71,7 +111,19 @@
     </label>
     <label
       >Source <small>(site : Udemy, Frontend Masters… détectée si connue)</small>
-      <input type="text" autocomplete="off" [value]="source()" (input)="setSource(val($event))" />
+      <input
+        type="text"
+        maxlength="100"
+        list="form-sources"
+        autocomplete="off"
+        [value]="source()"
+        (input)="setSource(val($event))"
+      />
+      <datalist id="form-sources">
+        @for (s of knownSources(); track s) {
+          <option [value]="s"></option>
+        }
+      </datalist>
     </label>
   </div>
 
@@ -129,7 +181,7 @@
   @if (error()) {
     <p class="error" role="alert">{{ error() }}</p>
   }
-  <button type="submit" class="primary" [disabled]="!svc.ready() || busy()">
+  <button type="submit" class="primary" [disabled]="!svc.ready() || busy() || siteBusy()">
     {{ link() ? 'Enregistrer les modifications' : 'Enregistrer' }}
   </button>
 </form>

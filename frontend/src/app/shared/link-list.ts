@@ -1,3 +1,5 @@
+import { FavoriteButton } from './favorite-button';
+import { SelectionToolbar, toggleSelection } from './selection-toolbar';
 import { LinkInsight } from './link-insight';
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
@@ -13,12 +15,17 @@ const PAGE_SIZE = 48;
 /** Liste en cartes avec recherche et filtre par étiquettes. Utilisée par l'accueil et les pages de catégorie. */
 @Component({
   selector: 'app-link-list',
-  imports: [LinkInsight, DatePipe, RouterLink, FocusButton],
+  imports: [FavoriteButton, SelectionToolbar, LinkInsight, DatePipe, RouterLink, FocusButton],
   templateUrl: './link-list.html',
 })
 export class LinkList {
   protected readonly svc = inject(LinkService);
   protected readonly sync = inject(SyncService);
+
+  protected readonly selected = signal<ReadonlySet<string>>(new Set());
+  protected toggle(id: string): void {
+    this.selected.update((s) => toggleSelection(s, id));
+  }
 
   readonly links = input.required<Link[]>();
   /** false : pas de recherche ni d'étiquettes (la page parente filtre elle-même). */
@@ -41,6 +48,7 @@ export class LinkList {
 
   protected setQuery(v: string): void {
     this.query.set(v);
+    this.selected.set(new Set());
     this.limit.set(PAGE_SIZE);
   }
 
@@ -49,11 +57,13 @@ export class LinkList {
   }
 
   protected toggleTag(tag: string): void {
+    this.selected.set(new Set());
     this.limit.set(PAGE_SIZE);
     this.activeTags.update((t) => (t.includes(tag) ? t.filter((x) => x !== tag) : [...t, tag]));
   }
 
   protected resetFilters(): void {
+    this.selected.set(new Set());
     this.limit.set(PAGE_SIZE);
     this.query.set('');
     this.activeTags.set([]);

@@ -1,3 +1,4 @@
+import { FavoriteButton } from '../shared/favorite-button';
 import { LinkInsight } from '../shared/link-insight';
 import { libraryOf, LEARNING_STATES, RESOURCE_TYPES } from '../core/library';
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
@@ -20,7 +21,7 @@ const EVENT_LABELS: Record<LinkEvent['type'], string> = {
 /** Fiche d'un lien : toutes ses informations. Le site lui-même s'ouvre depuis le bouton « Aller au site ». */
 @Component({
   selector: 'app-detail',
-  imports: [LinkInsight, DatePipe, RouterLink, FocusButton],
+  imports: [FavoriteButton, LinkInsight, DatePipe, RouterLink, FocusButton],
   templateUrl: './detail.html',
 })
 export class DetailPage {

@@ -54,6 +54,22 @@ export class LinkForm implements OnInit {
 
   protected readonly isSite = signal(false);
   protected readonly parentId = signal('');
+  protected readonly creatingSite = signal(false);
+  protected readonly siteName = signal('');
+  protected readonly siteUrl = signal('');
+  protected readonly siteBusy = signal(false);
+  protected readonly siteError = signal('');
+  protected readonly knownSources = computed(() =>
+    [
+      ...new Set([
+        ...this.svc
+          .links()
+          .map((l) => l.source)
+          .filter(Boolean),
+        ...this.sites().map((s) => s.title),
+      ]),
+    ].sort((a, b) => a.localeCompare(b, 'fr')),
+  );
 
   private categoryTouched = false;
   private sourceTouched = false;
@@ -84,8 +100,14 @@ export class LinkForm implements OnInit {
       }
       // Sinon, propose le site qui correspond à l'adresse saisie, tant que l'utilisateur n'a pas choisi lui-même.
       const s = this.suggestedSite();
-      if (s && !this.parentTouched && !this.isSite() && this.parentId() === '')
-        this.chooseParent(s.id);
+      if (!this.parentTouched && !this.isSite()) {
+        if (s) this.chooseParent(s.id);
+        else if (this.parentId()) {
+          this.parentId.set('');
+          if (!this.sourceTouched)
+            this.source.set(detectSource(normalizeUrl(this.url()) ?? '')?.source ?? '');
+        }
+      }
     });
   }
 
@@ -150,13 +172,62 @@ export class LinkForm implements OnInit {
     if (!s) return;
     if (url && this.url() === '') this.url.set(url);
     if (!this.categoryTouched && !this.category() && s.category) this.category.set(s.category);
-    if (!this.sourceTouched && !this.source()) this.source.set(s.title);
+    if (!this.sourceTouched) this.source.set(s.title);
   }
 
   protected pickParent(id: string): void {
     this.parentTouched = true;
     if (id === '') this.parentId.set('');
-    else this.chooseParent(id);
+    else {
+      this.chooseParent(id);
+      const site = this.sites().find((s) => s.id === id);
+      if (site) this.source.set(site.title);
+      this.sourceTouched = true;
+    }
+  }
+
+  protected openSiteCreator(): void {
+    this.siteName.set(this.source());
+    const url = normalizeUrl(this.url());
+    this.siteUrl.set(url ? new URL(url).origin : '');
+    this.siteError.set('');
+    this.creatingSite.set(true);
+  }
+
+  protected async createSite(): Promise<void> {
+    if (this.siteBusy()) return;
+    const url = normalizeUrl(this.siteUrl());
+    const title = this.siteName().trim();
+    if (!url || !title || title.length > 100) {
+      this.siteError.set('Indique un nom (100 caractères maximum) et une adresse http(s) valide.');
+      return;
+    }
+    this.siteBusy.set(true);
+    this.siteError.set('');
+    try {
+      // Reuse only the same site address, never a guessed domain or an ordinary bookmark.
+      const key = (value: string) => value.replace(/\/$/, '');
+      const existing = this.sites().find((s) => key(s.url) === key(url));
+      const site =
+        existing ??
+        (await this.svc.add({
+          url,
+          title,
+          source: title,
+          category: this.category(),
+          tags: [],
+          note: '',
+          kind: 'site',
+          parentId: null,
+          screenshot: null,
+        }));
+      this.pickParent(site.id);
+      this.creatingSite.set(false);
+    } catch (e) {
+      this.siteError.set(e instanceof Error ? e.message : 'Création du site impossible.');
+    } finally {
+      this.siteBusy.set(false);
+    }
   }
 
   protected setSiteFlag(checked: boolean): void {
@@ -280,5 +351,6 @@ export class LinkForm implements OnInit {
     this.isSite.set(false);
     this.parentId.set('');
     this.clearPending();
+    this.creatingSite.set(false);
   }
 }

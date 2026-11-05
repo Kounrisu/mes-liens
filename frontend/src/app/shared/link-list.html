@@ -47,9 +47,19 @@
   <p class="empty">Aucun lien ne correspond.</p>
 }
 
+<app-selection-toolbar [links]="visible()" [shown]="shown()" [(selected)]="selected" />
 <ul class="grid">
   @for (l of shown(); track l.id) {
-    <li class="card link">
+    <li class="card link" [class.picked]="selected().has(l.id)">
+      <label class="check card-select"
+        ><input
+          type="checkbox"
+          [checked]="selected().has(l.id)"
+          (change)="toggle(l.id)"
+          [attr.aria-label]="'Sélectionner ' + l.title"
+        />
+        Sélectionner</label
+      >
       @if (l.screenshotId && svc.screenshotUrls()[l.screenshotId]; as src) {
         <a
           [href]="l.url"
@@ -101,7 +111,7 @@
             [attr.aria-label]="'Ouvrir la fiche de ' + l.title"
             >Ouvrir</a
           >
-          <app-focus-button [link]="l" />
+          <app-favorite-button [link]="l" /><app-focus-button [link]="l" />
           <a
             class="btn small"
             [routerLink]="['/link', l.id, 'edit']"

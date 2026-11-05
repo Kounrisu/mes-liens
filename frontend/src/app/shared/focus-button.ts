@@ -2,13 +2,13 @@ import { Component, computed, inject, input } from '@angular/core';
 import { LinkService } from '../core/link.service';
 import { Link } from '../core/models';
 
-/** Bouton « étoile » : met un lien dans la page Focus (en dernière position) ou l'en retire. */
+/** Bouton Focus : met un lien dans la page Focus (en dernière position) ou l'en retire. */
 @Component({
   selector: 'app-focus-button',
   template: `
     <button type="button" class="btn small" [class.on]="inFocus()" [attr.aria-pressed]="inFocus()"
             [attr.aria-label]="(inFocus() ? 'Retirer du focus : ' : 'Mettre en focus : ') + link().title" (click)="toggle()">
-      {{ inFocus() ? '★ En focus' : '☆ Focus' }}
+      {{ inFocus() ? 'En focus' : 'Focus' }}
     </button>
   `,
 })

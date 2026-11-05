@@ -46,6 +46,9 @@ public class LinkEntity {
     private LibraryData library = LibraryData.empty();
 
     @Column(nullable = false)
+    private boolean favorite;
+
+    @Column(nullable = false)
     private String kind;
 
     @Column(name = "parent_id")
@@ -88,6 +91,7 @@ public class LinkEntity {
         this.source = d.source();
         // Older installed PWAs omit this field: preserve new learning data.
         if (d.library() != null) this.library = d.library();
+        if (d.favorite() != null) this.favorite = d.favorite();
         this.focusRank = d.focusRank();
         this.kind = d.kind();
         this.parentId = d.parentId();
@@ -102,7 +106,7 @@ public class LinkEntity {
     }
 
     public LinkDto toDto() {
-        return new LinkDto(id, url, title, domain, java.util.List.of(tags), note, screenshotId, category, source, focusRank, kind, parentId, createdAt, updatedAt, deletedAt, library);
+        return new LinkDto(id, url, title, domain, java.util.List.of(tags), note, screenshotId, category, source, focusRank, kind, parentId, createdAt, updatedAt, deletedAt, library, favorite);
     }
 
     public Long getServerSeq() { return serverSeq; }
