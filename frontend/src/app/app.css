@@ -1,0 +1,63 @@
+:host {
+  --bg: #f6f7f9; --fg: #1b1f24; --muted: #5b6672; --card: #fff; --line: #dde1e6;
+  --accent: #2557d6; --accent-fg: #fff; --danger: #b3261e; --ok: #1e7a46;
+  display: block; min-height: 100vh; background: var(--bg); color: var(--fg);
+  font: 16px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :host { --bg: #14171b; --fg: #e8ebee; --muted: #9aa6b2; --card: #1d2227; --line: #323a42; --accent: #6b93ff; --accent-fg: #0b1220; --danger: #ff8a80; --ok: #6fd39a; }
+}
+* { box-sizing: border-box; }
+h1, h2, h3 { margin: 0; line-height: 1.25; }
+h2 { font-size: 1.15rem; margin-bottom: .75rem; }
+h3 { font-size: 1rem; }
+a { color: var(--accent); }
+main { max-width: 64rem; margin: 0 auto; padding: 1rem; display: grid; gap: 1.5rem; }
+
+.top { display: flex; align-items: center; gap: .75rem; padding: .75rem 1rem; border-bottom: 1px solid var(--line); background: var(--card); position: sticky; top: 0; z-index: 2; flex-wrap: wrap; }
+.top h1 { font-size: 1.25rem; }
+.count { color: var(--muted); font-size: .9rem; }
+.spacer { flex: 1; }
+
+.card { background: var(--card); border: 1px solid var(--line); border-radius: .75rem; padding: 1rem; }
+form { display: grid; gap: .75rem; }
+label { display: grid; gap: .25rem; font-weight: 600; font-size: .9rem; }
+label small { font-weight: 400; color: var(--muted); }
+input[type='text'], input[type='search'], textarea {
+  font: inherit; padding: .55rem .7rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--bg); color: var(--fg); width: 100%;
+}
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+button, .btn { font: inherit; cursor: pointer; border-radius: .5rem; padding: .5rem .9rem; border: 1px solid var(--line); background: var(--card); color: var(--fg); display: inline-block; text-align: center; font-weight: 500; }
+button.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 600; justify-self: start; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+.ghost { background: transparent; }
+.danger { color: var(--danger); border-color: transparent; padding-inline: .4rem; }
+.danger:hover { border-color: var(--danger); }
+
+.drop { border: 2px dashed var(--line); border-radius: .75rem; padding: 1rem; text-align: center; display: grid; gap: .5rem; justify-items: center; color: var(--muted); }
+.drop p { margin: 0; }
+.drop.over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.drop img { max-width: 100%; max-height: 14rem; border-radius: .5rem; border: 1px solid var(--line); }
+
+.filters { display: flex; gap: .5rem; margin-bottom: .75rem; }
+.tags { list-style: none; margin: 0 0 .5rem; padding: 0; display: flex; flex-wrap: wrap; gap: .4rem; }
+.tag { padding: .15rem .65rem; border-radius: 999px; font-size: .85rem; }
+.tag small { color: var(--muted); margin-left: .25rem; }
+.tag.on { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.tag.on small { color: inherit; }
+
+.meta { color: var(--muted); font-size: .85rem; margin: 0 0 .5rem; }
+.empty { color: var(--muted); }
+.error { color: var(--danger); margin: 0; font-weight: 600; }
+.toast { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); background: var(--ok); color: #fff; padding: .6rem 1rem; border-radius: .5rem; margin: 0; z-index: 5; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); }
+.link { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+.thumb { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; object-position: top; display: block; background: var(--bg); border-bottom: 1px solid var(--line); }
+.body { padding: .85rem; display: grid; gap: .4rem; align-content: start; flex: 1; }
+.body h3 a { color: var(--fg); text-decoration: none; overflow-wrap: anywhere; }
+.body h3 a:hover { text-decoration: underline; }
+.note { margin: 0; font-size: .9rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+.body .danger { justify-self: start; }

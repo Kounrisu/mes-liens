@@ -22,3 +22,13 @@
 - Captures : fichiers disque nommés par UUID, type déterminé par signature (PNG/JPEG/WebP/GIF ; SVG exclu), 5 Mo max, écriture atomique, `nosniff` + CSP stricte en lecture.
 - Tests : 17 passent (PostgreSQL 18 via Testcontainers + tests unitaires du filtre).
 - Non fait / incertain : pas de CORS (prévu : même domaine via reverse proxy, à trancher en phase 0/5) ; limiteur en mémoire (remis à zéro au redémarrage) ; pas de nettoyage des captures orphelines ; pas de pagination de `GET /api/links` (OK pour quelques milliers de liens).
+
+## 2026-11-05 — Phase 3 (PWA : enregistrer, coller, lister, rechercher, filtrer)
+- UI Angular en signals, sans module Forms ni router. Tout est local (IndexedDB) ; la synchro vient en phase 4.
+- Captures : collage (Ctrl/Cmd+V), glisser-déposer, ou sélecteur de fichier (utile sur iPhone/iPad où coller est peu pratique). Redimensionnées à 1600 px et recompressées en WebP côté client (une capture iPhone fait plusieurs Mo, le serveur limite à 5 Mo). Stockées en Blob dans un nouveau store IndexedDB `screenshots` (base passée en version 2, migration incrémentale).
+- Sécurité : `normalizeUrl` n'accepte que http(s) — un `javascript:` collé finirait sinon dans un `href` (risque réel d'XSS, testé). Aucun `innerHTML` ; tout passe par l'interpolation Angular. Liens externes en `rel="noopener noreferrer"`.
+- Recherche : tous les mots doivent correspondre (titre, url, note, étiquettes), insensible à la casse et aux accents. Filtre par étiquettes en ET.
+- Le préremplissage `?url=…&title=…` est déjà géré (sert au bookmarklet / Raccourci iOS de la phase 5).
+- Chaque enregistrement écrit déjà les événements `created` (et `screenshot_added`) ; la vue historique est en phase 6.
+- Tests : 17 passent côté front (dont filtres, étiquettes, URL dangereuses). Vérifié à la main dans le navigateur : collage d'image simulé, enregistrement, affichage de la carte, étiquettes. Port 4200 déjà pris par un autre projet → dev sur 4300.
+- Non fait / limites : l'export JSON ne contient PAS les captures (seulement `screenshotId`) ; pas d'édition d'un lien existant (seulement suppression) ; pas testé sur Safari iOS ; pas de service worker (phase 5).

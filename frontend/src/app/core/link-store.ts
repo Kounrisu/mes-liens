@@ -12,6 +12,10 @@ interface MesLiensDB extends DBSchema {
     value: LinkEvent;
     indexes: { 'by-linkId': string; 'by-at': string };
   };
+  screenshots: {
+    key: string;
+    value: { id: string; blob: Blob };
+  };
 }
 
 /** Couche stockage IndexedDB. Sans dépendance Angular : testable seule. */
@@ -19,17 +23,31 @@ export class LinkStore {
   private constructor(private readonly db: IDBPDatabase<MesLiensDB>) {}
 
   static async open(name = 'mes-liens'): Promise<LinkStore> {
-    const db = await openDB<MesLiensDB>(name, 1, {
-      upgrade(db) {
-        const links = db.createObjectStore('links', { keyPath: 'id' });
-        links.createIndex('by-updatedAt', 'updatedAt');
-        links.createIndex('by-createdAt', 'createdAt');
-        const events = db.createObjectStore('events', { keyPath: 'id' });
-        events.createIndex('by-linkId', 'linkId');
-        events.createIndex('by-at', 'at');
+    const db = await openDB<MesLiensDB>(name, 2, {
+      upgrade(db, oldVersion) {
+        if (oldVersion < 1) {
+          const links = db.createObjectStore('links', { keyPath: 'id' });
+          links.createIndex('by-updatedAt', 'updatedAt');
+          links.createIndex('by-createdAt', 'createdAt');
+          const events = db.createObjectStore('events', { keyPath: 'id' });
+          events.createIndex('by-linkId', 'linkId');
+          events.createIndex('by-at', 'at');
+        }
+        if (oldVersion < 2) {
+          db.createObjectStore('screenshots', { keyPath: 'id' });
+        }
       },
     });
     return new LinkStore(db);
+  }
+
+  /** Captures : Blob local (cache). Le serveur est la source de vérité une fois synchronisé (phase 4). */
+  async putScreenshot(id: string, blob: Blob): Promise<void> {
+    await this.db.put('screenshots', { id, blob });
+  }
+
+  async getScreenshot(id: string): Promise<Blob | undefined> {
+    return (await this.db.get('screenshots', id))?.blob;
   }
 
   close(): void {
