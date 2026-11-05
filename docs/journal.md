@@ -131,3 +131,11 @@
   3. L'archive des captures était d'abord créée en `root` : le conteneur de sauvegarde reste root (l'API écrit ses captures en mode 600 via un fichier temporaire, un utilisateur ordinaire ne pourrait pas les lire) mais rend l'archive à `debian` en 600.
 - Les fichiers des essais manuels (créés par moi) ont été supprimés.
 - Non fait : copie hors serveur des sauvegardes ; purge du cache Docker (disque 83 %) ; chargement des données dans la base de production.
+
+## 2026-11-05 — Base de production chargée avec les favoris importés (accord explicite)
+- Constat de l'utilisateur : « rien dans l'app » sur links.sn8w.com. Normal à ce moment-là : base de production vide, et le navigateur n'a pas de copie locale pour cette origine (IndexedDB est propre à chaque origine : localhost:4300 ≠ links.sn8w.com).
+- Procédé : lots (200 par requête, 9 de liens + 9 d'événements) préparés sur le PC et **validés contre les limites réelles de l'API** avant envoi (0 erreur, 0 orphelin, 0 parent introuvable) ; copie dans un dossier privé du VPS (700) ; envoi depuis le serveur par le chemin public HTTPS avec le jeton lu sur place (jamais affiché), arrêt au premier lot refusé ; dossier temporaire supprimé ensuite.
+- Résultat en production : **1 705 liens dont 5 sites, 1 705 événements** ; répartition par catégorie identique au fichier. Lecture complète par l'API : 1,1 Mo en 0,6 s. API 249 Mo / base 102 Mo / web 36 Mo ; disque 83 %. Les 6 autres sites toujours 200 ; l'API peut toujours écrire ses captures.
+- Sauvegarde immédiate faite après chargement (dump 287 Ko), puis nocturne par le timer.
+- Pour voir les données dans l'app : ouvrir https://links.sn8w.com → « Synchronisation entre appareils » → URL du serveur + jeton → le premier tirage récupère tout (≈1,1 Mo). Tant que la synchro n'est pas configurée, l'app affiche une liste vide : **lacune d'ergonomie à corriger** (message d'accueil expliquant quoi faire sur un appareil neuf).
+- Non fait : copie hors serveur des sauvegardes ; purge du cache Docker ; phase 5 (PWA installable, bookmarklet, Raccourci iOS) ; phase 6.
