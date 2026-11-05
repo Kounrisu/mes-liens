@@ -111,3 +111,13 @@
 - Bug évité en passant : `.gitignore` masquait `.env.prod.example` (règle `.env.*`) → exception `!.env.*.example`.
 - Sécurité : `MESLIENS_TRUST_XFF=true` est sûr uniquement parce que Caddy réécrit `X-Forwarded-*` ; si un autre proxy est un jour ajouté devant, à revoir (risque réel : contournement de la limite de débit).
 - Non fait : DNS (à créer chez OVH), planification des sauvegardes (timer systemd, `crontab` absent du serveur), purge du cache Docker, première exécution sur le VPS.
+
+## 2026-11-05 — Déploiement sur le VPS : https://links.sn8w.com (étapes 1 à 6, accord explicite)
+- Pré-vérifications (lecture seule) : rien de `mes-liens` n'existait ; état de référence des 6 autres sites = 200. DNS `links.sn8w.com` créé par l'utilisateur chez OVH (vérifié chez Google et Cloudflare).
+- Réalisé : builds sur le PC (jar 52 Mo, front 337 Ko) ; copie dans `~/mes-liens` (52 Mo, aucun CRLF) ; secrets générés SUR le serveur (`.env.prod`, mode 600, 48 et 64 caractères, jamais affichés) ; `docker compose up -d --build` → 3 conteneurs sains, PostgreSQL 18.6, 5 migrations ; bloc ajouté au Caddy partagé avec copie datée (`Caddyfile.bak-20261105114430`), `caddy validate` OK puis `caddy reload` gracieux.
+- Vérifié depuis l'extérieur : PWA 200, `/table` 200 (repli SPA), API sans jeton 401, mauvais jeton 401, jeton valide via Caddy 200 (donc `X-Forwarded-Proto` bien pris en compte), HTTP → 308 vers HTTPS, certificat Let's Encrypt valide, HSTS / nosniff / referrer-policy présents, base non publiée sur l'hôte, les 6 autres sites toujours 200, tous les autres conteneurs toujours Up.
+- Empreinte réelle : API 226 Mo, base 84 Mo, web 16 Mo ; disque 7,6 → 6,7 Go libres (83 %), RAM disponible 1,7 → 1,35 Go.
+- Fausse alerte levée : une ligne de log contenant « Error » était l'option JVM `ExitOnOutOfMemoryError`.
+- **Rien n'est encore dans la base de production** (0 lien). Le front en développement (localhost:4300) a ses propres données locales ; il ne peut pas synchroniser vers le serveur (pas de CORS, volontairement : en production la PWA et l'API ont la même origine).
+- Reste à faire : (1) sauvegardes planifiées (`crontab` absent → timer systemd, sudo, sur accord) AVANT de mettre des données dans la base ; (2) purge du cache Docker (disque à 83 %) sur accord ; (3) première synchro / import dans la base de production ; (4) phase 5 (PWA installable, bookmarklet, Raccourci iOS), phase 6.
+- Rollback documenté : restaurer la copie du Caddyfile + `caddy reload` ; `docker compose down` ; `rm -rf ~/mes-liens` (les volumes ne partent qu'avec `down -v`).

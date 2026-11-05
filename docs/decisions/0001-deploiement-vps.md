@@ -1,6 +1,6 @@
 # 0001 — Déploiement sur le VPS : état des lieux et plan
 
-Statut : **proposé, non appliqué**. Rien n'a été modifié sur le serveur (inspection en lecture seule, 2026-11-05).
+Statut : **appliqué le 2026-11-05** (étapes 1 à 6 de `infra/README.md`). L'état des lieux ci-dessous a été fait en lecture seule AVANT le déploiement. Restent à faire, sur accord : sauvegardes planifiées et purge du cache Docker.
 Ce document ne contient ni adresse, ni identifiant, ni secret (le dépôt est public).
 
 ## 1. État des lieux (lecture seule)
