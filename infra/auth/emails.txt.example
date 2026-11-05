@@ -1,0 +1,3 @@
+# Une adresse e-mail Google par ligne : seules ces adresses peuvent se connecter.
+# Le vrai fichier (~/mes-liens/auth/emails.txt) est créé SUR LE SERVEUR par infra/auth-setup.sh et n'est jamais commité (données personnelles).
+vous@gmail.com

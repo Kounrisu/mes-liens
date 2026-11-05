@@ -44,6 +44,35 @@ services:
     networks: [internal, web] # internal : vers la base ; web : pour que Caddy joigne l'API
     mem_limit: 400m
 
+  # Connexion Google. Démarré seulement avec « --profile auth » ET quand ~/mes-liens/.env.auth existe (infra/auth-setup.sh) :
+  # sans identifiants il ne pourrait pas démarrer, et il ne doit pas empêcher le reste de monter.
+  oauth:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.5
+    container_name: mesliens-oauth
+    profiles: [auth]
+    restart: unless-stopped
+    env_file: .env.auth # OAUTH2_PROXY_CLIENT_ID, OAUTH2_PROXY_CLIENT_SECRET, OAUTH2_PROXY_COOKIE_SECRET (jamais dans le dépôt)
+    command:
+      - --provider=google
+      - --http-address=0.0.0.0:4180
+      - --reverse-proxy=true # fait confiance aux en-têtes X-Forwarded-* posés par Caddy (seul Caddy peut joindre ce conteneur)
+      - --redirect-url=https://links.sn8w.com/oauth2/callback
+      - --upstream=static://202 # mode « portier » : pas de proxy, seulement la décision connecté / non connecté
+      - --authenticated-emails-file=/etc/oauth2/emails.txt # SEULES ces adresses entrent, même avec un compte Google valide
+      - --whitelist-domain=links.sn8w.com
+      - --skip-provider-button=true # va directement chez Google
+      - --code-challenge-method=S256 # PKCE
+      - --approval-prompt=auto # Google ne redemande pas l'accord à chaque connexion (la valeur par défaut est « force »)
+      - --cookie-name=__Host-mesliens # préfixe __Host- : cookie Secure, sans Domain, Path=/
+      - --cookie-secure=true
+      - --cookie-samesite=lax
+      - --cookie-expire=168h # reconnexion tous les 7 jours
+      - --cookie-refresh=1h # revérifie chaque heure que le compte est toujours autorisé
+    volumes:
+      - ./auth/emails.txt:/etc/oauth2/emails.txt:ro
+    networks: [web] # Caddy la joint par ce réseau ; elle a besoin d'Internet pour parler à Google
+    mem_limit: 64m
+
   web:
     image: caddy:2-alpine # même image que le proxy du serveur (déjà présente, rien à télécharger)
     container_name: mesliens-web

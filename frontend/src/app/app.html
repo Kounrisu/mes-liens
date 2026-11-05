@@ -28,6 +28,12 @@
   <p class="sr-only" role="status" aria-live="polite">{{ status() }}</p>
   @if (status()) { <p class="toast" aria-hidden="true">{{ status() }}</p> }
   @if (error()) { <p class="error banner" role="alert">{{ error() }}</p> }
+  @if (sync.status() === 'auth-error' && sync.gateway()) {
+    <p class="error banner" role="alert">
+      {{ sync.message() }}
+      <button type="button" class="primary" (click)="reconnect()">Se reconnecter</button>
+    </p>
+  }
 
   @if (showOnboarding()) {
     <section class="card onboarding" aria-labelledby="onb-h">

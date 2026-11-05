@@ -1,0 +1,48 @@
+# Bloc links.sn8w.com AVEC connexion Google (oauth2-proxy). Remplace le bloc « accès automatique sans connexion ».
+# Appliqué par infra/enable-google-auth.sh (qui lit la clé de l'API dans ~/mes-liens/.env.prod : elle ne doit JAMAIS être écrite dans ce dépôt).
+#
+# Principe : Caddy demande à oauth2-proxy « cette requête a-t-elle un cookie de session valide ? » (forward_auth).
+#  - /oauth2/*  : pages de connexion et de retour de Google, accessibles sans être connecté.
+#  - /api/*     : 401 (jamais de redirection) si non connecté ; sinon la clé de l'API est ajoutée par le serveur.
+#  - le reste   : si non connecté, redirection vers la connexion Google.
+# Seules les adresses listées dans ~/mes-liens/auth/emails.txt sont admises, même avec un compte Google valide.
+links.sn8w.com {
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		X-Robots-Tag "noindex, nofollow"
+	}
+
+	handle /oauth2/* {
+		reverse_proxy mesliens-oauth:4180 {
+			header_up X-Real-IP {remote_host}
+			header_up X-Forwarded-Uri {uri}
+		}
+	}
+
+	handle /api/* {
+		forward_auth mesliens-oauth:4180 {
+			uri /oauth2/auth
+			header_up X-Real-IP {remote_host}
+		}
+		request_body {
+			max_size 8MB # l'API refuse de toute façon au-delà de 5 Mo (captures d'écran)
+		}
+		reverse_proxy mesliens-api:8080 {
+			header_up X-Api-Token "<valeur de MESLIENS_TOKEN, lue sur le serveur>"
+		}
+	}
+
+	handle {
+		forward_auth mesliens-oauth:4180 {
+			uri /oauth2/auth
+			header_up X-Real-IP {remote_host}
+			@error status 401
+			handle_response @error {
+				redir * /oauth2/sign_in?rd={scheme}://{host}{uri}
+			}
+		}
+		reverse_proxy mesliens-web:80
+	}
+}

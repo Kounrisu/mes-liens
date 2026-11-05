@@ -60,6 +60,21 @@ ssh <vps> 'docker exec caddy caddy reload   --config /etc/caddy/Caddyfile'
 Effet : le navigateur n'a aucun jeton ; l'app détecte l'accès automatique au premier lancement et se connecte seule. **Aucune authentification n'existe tant qu'on n'en ajoute pas une devant ce mécanisme** : quiconque atteint l'URL lit et modifie les liens. À traiter rapidement.
 Annuler : restaurer la dernière copie `~/proxy/Caddyfile.bak-…` (`cat copie > ~/proxy/Caddyfile`, pas `mv`) puis `caddy reload` : l'app retombe sur le guide de connexion manuelle (jeton).
 
+## Étape 5c — Connexion Google (préparée, à appliquer après création des identifiants Google)
+Décision et vérifications : [`docs/decisions/0002-authentification-google.md`](../docs/decisions/0002-authentification-google.md). Ordre :
+```bash
+# 1. (toi, chez Google) créer l'ID client OAuth — voir la décision 0002
+# 2. copier les fichiers
+scp infra/docker-compose.prod.yml infra/auth-setup.sh infra/enable-google-auth.sh infra/caddy-site-block.auth.txt <vps>:~/mes-liens/
+# 3. saisir l'adresse autorisée et les identifiants Google SUR LE SERVEUR (secret masqué, jamais affiché ni commité)
+ssh -t <vps> 'bash ~/mes-liens/auth-setup.sh'
+# 4. démarrer le conteneur de connexion (nouvelle image ~70 Mo, 1 conteneur ; rien d'autre n'est touché)
+ssh <vps> 'cd ~/mes-liens && docker compose -f docker-compose.prod.yml --env-file .env.prod --profile auth up -d oauth'
+# 5. basculer le Caddy (copie datée, contrôles, vérification réelle, restauration automatique en cas d'échec)
+ssh <vps> 'bash ~/mes-liens/enable-google-auth.sh'
+```
+Ensuite, les mises à jour du compose utilisent `--profile auth` (sinon le conteneur de connexion n'est pas géré). Tester : navigation privée → redirection vers Google → connexion avec l'adresse autorisée → l'app s'affiche ; avec un autre compte Google → refusé.
+
 ## Étape 6 — Vérifier depuis ton PC
 ```bash
 curl -s -o /dev/null -w "PWA: %{http_code}\n"            https://links.sn8w.com/        # 200

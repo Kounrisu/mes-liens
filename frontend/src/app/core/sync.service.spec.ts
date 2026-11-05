@@ -17,6 +17,20 @@ beforeEach(async () => {
   sync = TestBed.inject(SyncService);
 });
 
+describe('SyncService — session expirée en accès automatique', () => {
+  it('un 401 en mode automatique demande de se reconnecter (et non de ressaisir un jeton)', async () => {
+    const f = vi.fn(async () => json({}, 200));
+    await sync.tryGateway(prod, f as unknown as typeof fetch); // active le mode automatique
+    expect(sync.gateway()).toBe(true);
+    const spy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(json({}, 401));
+    await sync.syncNow();
+    spy.mockRestore();
+    expect(sync.status()).toBe('auth-error');
+    expect(sync.message()).toMatch(/session a expiré/);
+    expect(sync.message()).not.toMatch(/jeton/i);
+  });
+});
+
 describe('SyncService.tryGateway (accès automatique)', () => {
   it('le serveur répond sans jeton : l’appareil se connecte seul, sans jeton conservé', async () => {
     const f = vi.fn(async () => json({ cursor: 0, head: 5, links: [], events: [] }));

@@ -128,7 +128,11 @@ export class SyncService {
     } catch (e) {
       if (e instanceof SyncAuthError) {
         this.status.set('auth-error');
-        this.message.set('Jeton refusé par le serveur. Vérifie-le puis reconnecte-toi.');
+        this.message.set(
+          this.gateway()
+            ? 'Ta session a expiré : recharge la page pour te reconnecter avec Google. Tes modifications sont conservées et seront envoyées ensuite.'
+            : 'Jeton refusé par le serveur. Vérifie-le puis reconnecte-toi.',
+        );
       } else if (e instanceof SyncNetworkError) {
         this.status.set('offline');
         this.message.set(navigator.onLine ? 'Serveur injoignable, nouvel essai automatique.' : 'Hors ligne : les modifications seront envoyées au retour du réseau.');
