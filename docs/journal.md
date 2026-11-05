@@ -146,3 +146,8 @@
 - Vérifié dans un navigateur sur une origine vide (localhost:4400). Tests : 94 passent (+ test de l'URL proposée).
 - Non déployé : ces changements ne sont que dans le dépôt local ; le site en ligne affiche encore l'ancien écran tant que le front n'est pas redéployé (étape 1-2 du README : build + copie de `dist`, remplacement de fichiers statiques, sans redémarrage ni changement de configuration).
 - Piège noté : le jeton reste à saisir une fois par navigateur. Idée non réalisée : lien de configuration à ouvrir sur le téléphone (jeton dans le fragment d'URL) — pratique mais le jeton finirait dans l'historique du navigateur ; à décider.
+
+## 2026-11-05 — Front redéployé (écran d'accueil guidé), accord explicite
+- Build sur le PC, copie dans un dossier temporaire du VPS (`web/dist.new`), puis remplacement EN PLACE des fichiers de `web/dist` (le conteneur lit ce dossier via un montage de dossier : un `mv` du dossier aurait laissé le conteneur sur l'ancien contenu), retrait des seuls anciens fichiers hachés, suppression du dossier temporaire. Aucun redémarrage, aucune modification de configuration.
+- Vérifié : le nouveau `main-*.js` est servi et contient le nouvel écran ; `/` et `/table` 200 ; API sans jeton 401 ; les 6 autres sites 200.
+- Jeton remis dans le presse-papiers de l'utilisateur (jamais affiché) pour la première connexion ; à vider ensuite.
