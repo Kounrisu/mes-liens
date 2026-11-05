@@ -177,3 +177,18 @@ describe('LinkService.update', () => {
     expect((await svc.storage.getLink(l.id))?.deletedAt).not.toBeNull();
   });
 });
+
+describe('LinkService.removeMany', () => {
+  it('supprime le lot en une fois, ignore doublons et inconnus, laisse les autres, marque à pousser', async () => {
+    const a = await svc.add(fields({ url: 'https://e.org/a' }));
+    const b = await svc.add(fields({ url: 'https://e.org/b' }));
+    const c = await svc.add(fields({ url: 'https://e.org/c' }));
+    const before = svc.localChanges();
+    expect(await svc.removeMany([a.id, b.id, a.id, 'inconnu'])).toBe(2);
+    expect(svc.localChanges()).toBe(before + 1); // une seule synchro déclenchée
+    expect(svc.links().map((l) => l.id)).toEqual([c.id]);
+    expect((await svc.storage.getLink(a.id))?.deletedAt).not.toBeNull(); // tombstone conservé
+    expect((await svc.storage.listDirty()).map((d) => d.key)).toContain(`link:${b.id}`);
+    expect(await svc.removeMany([a.id])).toBe(0); // déjà supprimé : rien, pas de synchro inutile
+  });
+});

@@ -175,6 +175,16 @@ export class LinkService {
     await this.afterLocalChange();
   }
 
+  /** Supprime plusieurs liens d'un coup (une seule mise à jour de l'écran et une seule synchro). Retourne le nombre réellement supprimé. */
+  async removeMany(ids: readonly string[]): Promise<number> {
+    const store = this.need();
+    const now = new Date().toISOString();
+    let n = 0;
+    for (const id of new Set(ids)) if (await store.softDeleteLink(id, now)) n++;
+    if (n) await this.afterLocalChange();
+    return n;
+  }
+
   async exportJson(): Promise<string> {
     return exportToJson(this.need());
   }

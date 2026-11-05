@@ -124,3 +124,8 @@ label.check span { display: grid; }
 .check { display: flex; align-items: center; gap: .5rem; font-weight: 500; margin: .5rem 0; }
 .check input { width: auto; }
 .primary-link { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 600; }
+.batch { margin: 0 0 .5rem; }
+.batch .meta { margin: 0; flex: 1; }
+.check-col { width: 2.2rem; text-align: center; }
+.check-col input { width: auto; }
+tr.picked { background: color-mix(in srgb, var(--accent) 12%, transparent); }

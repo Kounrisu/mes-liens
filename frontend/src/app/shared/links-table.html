@@ -1,14 +1,35 @@
-@if (searchable()) {
 <div class="filters">
-  <input type="search" placeholder="Rechercher…" aria-label="Rechercher" [value]="query()" (input)="setQuery(val($event))" />
+  @if (searchable()) {
+    <input type="search" placeholder="Rechercher…" aria-label="Rechercher" [value]="query()" (input)="setQuery(val($event))" />
+  }
+  <select aria-label="Filtrer par source" [value]="source()" (change)="setSource(val($event))">
+    <option value="">Toutes les sources</option>
+    @for (s of sources(); track s) { <option [value]="s" [selected]="source() === s">{{ s }}</option> }
+  </select>
+  <select aria-label="Filtrer par étiquette" [value]="tag()" (change)="setTag(val($event))">
+    <option value="">Toutes les étiquettes</option>
+    @for (t of tags(); track t.tag) { <option [value]="t.tag" [selected]="tag() === t.tag">{{ t.tag }} ({{ t.count }})</option> }
+  </select>
+  @if (query() || source() || tag()) {
+    <button type="button" class="ghost" (click)="resetFilters()">Effacer les filtres</button>
+  }
 </div>
-}
-<p class="meta" aria-live="polite">{{ rows().length }} lien{{ rows().length > 1 ? 's' : '' }}</p>
+<div class="row batch" role="group" aria-label="Actions sur la sélection">
+  <p class="meta" aria-live="polite">
+    {{ rows().length }} lien{{ rows().length > 1 ? 's' : '' }}
+    @if (picked().length) { · <strong>{{ picked().length }} sélectionné{{ picked().length > 1 ? 's' : '' }}</strong> }
+  </p>
+  <button type="button" (click)="toggleAll()" [disabled]="!rows().length">{{ allPicked() ? 'Tout désélectionner' : 'Tout sélectionner (' + rows().length + ')' }}</button>
+  <button type="button" class="ghost danger" [disabled]="!picked().length" (click)="removePicked()">Supprimer la sélection ({{ picked().length }})</button>
+</div>
 
 <div class="table-wrap" tabindex="0" role="region" aria-label="Tableau des liens">
   <table>
     <thead>
       <tr>
+        <th scope="col" class="check-col">
+          <input type="checkbox" aria-label="Sélectionner tous les liens filtrés" [checked]="allPicked()" [disabled]="!rows().length" (change)="toggleAll()" />
+        </th>
         @for (c of columns; track c.key) {
           <th scope="col" [attr.aria-sort]="ariaSort(c.key)">
             <button type="button" (click)="sortBy(c.key)">{{ c.label }} <span class="arrow" aria-hidden="true">{{ arrow(c.key) }}</span></button>
@@ -20,7 +41,8 @@
     </thead>
     <tbody>
       @for (l of shownRows(); track l.id) {
-        <tr>
+        <tr [class.picked]="selected().has(l.id)">
+          <td class="check-col"><input type="checkbox" [attr.aria-label]="'Sélectionner ' + l.title" [checked]="selected().has(l.id)" (change)="toggle(l.id)" /></td>
           <td class="title"><a [href]="l.url" target="_blank" rel="noopener noreferrer">{{ l.title }}</a> @if (l.kind === 'site') { <span class="badge">site</span> }
             <div class="meta">{{ l.domain }}</div></td>
           <td>{{ l.source }}</td>
@@ -36,7 +58,7 @@
           </td>
         </tr>
       } @empty {
-        <tr><td colspan="7" class="empty">{{ svc.ready() ? 'Aucun lien ne correspond.' : 'Chargement…' }}</td></tr>
+        <tr><td colspan="8" class="empty">{{ svc.ready() ? 'Aucun lien ne correspond.' : 'Chargement…' }}</td></tr>
       }
     </tbody>
   </table>
