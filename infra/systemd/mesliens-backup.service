@@ -1,0 +1,14 @@
+[Unit]
+Description=Sauvegarde de mes-liens (base PostgreSQL + captures)
+Wants=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+User=debian
+# Le script n'écrit que dans ~/mes-liens-backups et supprime uniquement ses propres fichiers de plus de 14 jours.
+ExecStart=/bin/sh /home/debian/mes-liens/backup.sh
+# Priorité basse : ne doit jamais ralentir les autres applications du serveur.
+Nice=19
+IOSchedulingClass=idle
+TimeoutStartSec=15min

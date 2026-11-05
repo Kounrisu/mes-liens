@@ -14,8 +14,13 @@ docker exec mesliens-db pg_dump -U mesliens -Fc mesliens > "$DEST/db-$STAMP.dump
 mv "$DEST/db-$STAMP.dump.tmp" "$DEST/db-$STAMP.dump"
 
 # Captures : lecture seule du volume (image du proxy déjà présente sur le serveur, jamais téléchargée ici).
-docker run --rm --pull=never -v mes-liens_screenshots:/data:ro -v "$DEST":/out caddy:2-alpine \
-  tar czf "/out/screenshots-$STAMP.tgz.tmp" -C /data .
+# Le conteneur tourne en root EXPRÈS : l'API écrit ses captures via un fichier temporaire en mode 600 (lisible par son seul utilisateur),
+# un utilisateur ordinaire ne pourrait pas toutes les archiver. L'archive est ensuite rendue à l'utilisateur courant, en 600.
+# ATTENTION — le volume est monté sur /vol, PAS sur /data : l'image caddy déclare déjà /data ; monter un volume VIDE dessus y copie le
+# contenu ET le propriétaire (root) de l'image, ce qui empêchait l'API d'écrire ses captures (régression constatée au premier essai).
+docker run --rm --pull=never -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
+  -v mes-liens_screenshots:/vol:ro -v "$DEST":/out caddy:2-alpine \
+  sh -c "tar czf /out/screenshots-$STAMP.tgz.tmp -C /vol . && chown \$HOST_UID:\$HOST_GID /out/screenshots-$STAMP.tgz.tmp && chmod 600 /out/screenshots-$STAMP.tgz.tmp"
 mv "$DEST/screenshots-$STAMP.tgz.tmp" "$DEST/screenshots-$STAMP.tgz"
 
 # Rétention : supprime uniquement les fichiers de sauvegarde de CE dossier plus vieux que 14 jours.

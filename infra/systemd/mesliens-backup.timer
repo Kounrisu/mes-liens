@@ -1,0 +1,12 @@
+[Unit]
+Description=Sauvegarde quotidienne de mes-liens
+
+[Timer]
+# Chaque nuit à 03:30 (heure du serveur), avec un décalage aléatoire de 10 min.
+OnCalendar=*-*-* 03:30:00
+RandomizedDelaySec=10min
+# Si le serveur était éteint à l'heure prévue, la sauvegarde manquée est faite au redémarrage.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

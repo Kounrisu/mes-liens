@@ -63,10 +63,17 @@ curl -s -o /dev/null -w "API sans jeton: %{http_code}\n" https://links.sn8w.com/
 ```
 Puis dans l'app : « Synchronisation entre appareils » → URL `https://links.sn8w.com`, et le jeton.
 
-## Étape 7 — Sauvegardes (après accord, nouveau)
-`backup.sh` : `pg_dump` + archive des captures, rétention 14 jours dans `~/mes-liens-backups`. `crontab` n'est pas installé sur le serveur : planification par timer systemd (nécessite `sudo`, fichiers à préparer et à valider avec toi). Première exécution manuelle : `ssh <vps> 'sh ~/mes-liens/backup.sh'`.
-**Restauration** (testée en local) : `pg_restore -U mesliens -d mesliens --clean --if-exists < db-AAAA-MM-JJ-HHMM.dump`.
-
+## Étape 7 — Sauvegardes quotidiennes (installées le 2026-11-05)
+- `backup.sh` : `pg_dump` (format custom) + archive des captures dans `~/mes-liens-backups` (dossier 700, fichiers 600), rétention 14 jours, écriture atomique (fichier temporaire puis renommage : une sauvegarde interrompue ne laisse jamais un faux fichier valide).
+- Planification : timer systemd `mesliens-backup.timer` (chaque nuit 03:30 UTC ± 10 min, `Persistent=true` : rattrape une sauvegarde manquée si le serveur était éteint), service `mesliens-backup.service` en utilisateur `debian`, priorité basse (ne ralentit pas les autres applications). Fichiers : `infra/systemd/`. Installés dans `/etc/systemd/system/` (`sudo`, `crontab` n'existe pas sur ce serveur).
+  ```bash
+  sudo install -m 644 infra/systemd/mesliens-backup.{service,timer} /etc/systemd/system/
+  sudo systemctl daemon-reload && sudo systemctl enable --now mesliens-backup.timer
+  ```
+- Contrôles : `systemctl list-timers mesliens-backup.timer` · `journalctl -u mesliens-backup.service -n 20` (nécessite le groupe `systemd-journal` ou `sudo`) · `ls -l ~/mes-liens-backups`. Lancer à la main : `sh ~/mes-liens/backup.sh`.
+- **Restauration** (testée sur le serveur dans une base jetable) : `pg_restore -U mesliens -d mesliens --clean --if-exists < db-AAAA-MM-JJ-HHMM.dump` (via `docker exec -i mesliens-db …`). Captures : `tar xzf screenshots-….tgz` dans le volume.
+- **Piège rencontré (corrigé)** : monter le volume des captures sur `/data` dans l'image `caddy` y copiait le contenu et le propriétaire `root` de l'image → l'API ne pouvait plus écrire ses captures. Le script monte maintenant le volume sur `/vol`. Après toute modification du script, vérifier : `docker exec mesliens-api sh -c 'touch /data/screenshots/.t && rm /data/screenshots/.t'`.
+- **Limite** : sauvegardes sur le MÊME disque que la production. Elles protègent d'une erreur de manipulation ou d'une corruption, pas de la perte du serveur : prévoir une copie périodique vers un autre endroit (ex. `scp` vers ton PC).
 ## Étape 8 — Libérer du disque (optionnel, après accord)
 `docker builder prune` supprime uniquement le cache de build inutilisé (~5,5 Go récupérables sur 14 Go) ; ne touche ni conteneurs ni volumes ni images utilisées.
 

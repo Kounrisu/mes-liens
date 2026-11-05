@@ -121,3 +121,13 @@
 - **Rien n'est encore dans la base de production** (0 lien). Le front en développement (localhost:4300) a ses propres données locales ; il ne peut pas synchroniser vers le serveur (pas de CORS, volontairement : en production la PWA et l'API ont la même origine).
 - Reste à faire : (1) sauvegardes planifiées (`crontab` absent → timer systemd, sudo, sur accord) AVANT de mettre des données dans la base ; (2) purge du cache Docker (disque à 83 %) sur accord ; (3) première synchro / import dans la base de production ; (4) phase 5 (PWA installable, bookmarklet, Raccourci iOS), phase 6.
 - Rollback documenté : restaurer la copie du Caddyfile + `caddy reload` ; `docker compose down` ; `rm -rf ~/mes-liens` (les volumes ne partent qu'avec `down -v`).
+
+## 2026-11-05 — Sauvegardes quotidiennes installées sur le VPS (accord explicite)
+- Installé : timer systemd `mesliens-backup.timer` (03:30 UTC ± 10 min, rattrapage si serveur éteint) + service en utilisateur `debian`, priorité basse ; script `~/mes-liens/backup.sh` ; dossier `~/mes-liens-backups` (700). Prochain déclenchement : 2026-11-06 03:36 UTC. Exécution réelle par systemd testée : OK.
+- Restauration testée SUR LE SERVEUR dans une base jetable (3 tables, 5 migrations, trigger append-only présent), base jetable supprimée ensuite ; la base de production n'a jamais été écrite.
+- **Erreurs commises et réparées (à relire)** :
+  1. Mon test de restauration avait un bug de guillemets et a laissé une base jetable `restore_check` (supprimée aussitôt ; le script de test la nettoie maintenant via `trap`).
+  2. **Régression sur la production** : au premier essai, le script montait le volume des captures sur `/data` d'une image qui déclare déjà `/data`. Docker a copié dans le volume vide le dossier `caddy/` ET le propriétaire `root` de l'image : le dossier des captures est passé de `app:app` à `root:root`, l'API ne pouvait plus écrire (« Permission denied » constaté). Aucune capture n'existait, donc aucune perte. Réparé (`rmdir caddy` — dossier vide créé par moi —, `chown app:app`), cause corrigée (montage sur `/vol`), et le test de sauvegarde vérifie désormais que l'API peut écrire avant ET après. La répétition locale n'avait pas détecté cela (Docker Desktop, volume déjà rempli).
+  3. L'archive des captures était d'abord créée en `root` : le conteneur de sauvegarde reste root (l'API écrit ses captures en mode 600 via un fichier temporaire, un utilisateur ordinaire ne pourrait pas les lire) mais rend l'archive à `debian` en 600.
+- Les fichiers des essais manuels (créés par moi) ont été supprimés.
+- Non fait : copie hors serveur des sauvegardes ; purge du cache Docker (disque 83 %) ; chargement des données dans la base de production.
