@@ -10,12 +10,13 @@ test -s "$release/docker-compose.prod.yml"
 docker image inspect mesliens-previews:learning-v1 >/dev/null
 test ! -e "$release/deployed"
 mkdir -p "$release/rollback"
-test ! -e "$release/rollback/ready" # never overwrite the original rollback snapshot
 sh "$root/backup.sh"
+if [ ! -e "$release/rollback/ready" ]; then # retries preserve the original rollback snapshot
 cp "$root/api/mes-liens-api.jar" "$release/rollback/mes-liens-api.jar"
 cp "$root/docker-compose.prod.yml" "$release/rollback/docker-compose.prod.yml"
 tar czf "$release/rollback/web.tgz" -C "$root/web/dist" .
 touch "$release/rollback/ready"
+fi
 rollback() {
   trap - ERR
   echo 'Deployment failed; restoring previous API and frontend.' >&2

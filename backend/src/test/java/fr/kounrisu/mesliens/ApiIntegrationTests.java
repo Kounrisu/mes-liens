@@ -288,7 +288,7 @@ class ApiIntegrationTests {
         seed(id,link(id,"Personal title","2026-11-01T10:00:00Z",null));
         mvc.perform(authed(post("/api/insights/recheck")).contentType(MediaType.APPLICATION_JSON).content("{\"ids\":[\""+id+"\"]}"))
           .andExpect(status().isOk());
-        jdbc.update("UPDATE link_insights SET next_check_at='2000-01-01' WHERE link_id=?",id);
+        assertThat(jdbc.queryForObject("SELECT extract(epoch from next_check_at)::bigint FROM link_insights WHERE link_id=?",Long.class,id)).isZero();
         mvc.perform(authed(post("/api/insights/claim"))).andExpect(status().isOk()).andExpect(jsonPath("$[0].linkId").value(id.toString()));
         UUID claim=jdbc.queryForObject("SELECT claim_id FROM link_insights WHERE link_id=?",UUID.class,id);
         String result="""

@@ -45,7 +45,7 @@ public class InsightsController {
     @PostMapping("/recheck") @Transactional
     public void recheck(@Valid @RequestBody Recheck request) {
         seed();
-        for (UUID id : request.ids()) jdbc.update("UPDATE link_insights SET next_check_at=now() WHERE link_id=? AND (lease_until IS NULL OR lease_until < now())",id);
+        for (UUID id : request.ids()) jdbc.update("UPDATE link_insights SET next_check_at=to_timestamp(0) WHERE link_id=? AND (lease_until IS NULL OR lease_until < now())",id);
     }
     @PostMapping("/claim") @Transactional
     public List<Job> claim() {
