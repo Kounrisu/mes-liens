@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { AdminPage } from './pages/admin';
 import { CategoryPage } from './pages/category';
 import { DetailPage } from './pages/detail';
 import { EditPage } from './pages/edit';
@@ -10,6 +11,7 @@ import { YoutubePage } from './pages/youtube';
 
 export const routes: Routes = [
   { path: '', component: HomePage, title: 'mes-liens' },
+  { path: 'admin', component: AdminPage, title: 'Administration — mes-liens' },
   { path: 'focus', component: FocusPage, title: 'Focus — mes-liens' },
   { path: 'sites', component: SitesPage, title: 'Sites — mes-liens' },
   { path: 'table', component: TablePage, title: 'Tableau — mes-liens' },

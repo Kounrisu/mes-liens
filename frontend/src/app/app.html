@@ -2,11 +2,10 @@
   <h1><a routerLink="/">mes-liens</a></h1>
   <span class="count">{{ svc.count() }} lien{{ svc.count() > 1 ? 's' : '' }}</span>
   <span class="spacer"></span>
-  <span class="sync" [class.bad]="sync.status() === 'auth-error' || sync.status() === 'error'" [class.warn]="sync.status() === 'offline'" role="status">{{ statusLabel() }}</span>
-  <button type="button" class="ghost" (click)="doExport()">Exporter</button>
-  <label class="ghost btn">Importer
-    <input type="file" accept="application/json,.json" hidden (change)="doImport($event)" />
-  </label>
+  @if (problem()) {
+    <a class="sync bad" routerLink="/admin" role="status">{{ statusLabel() }}</a>
+  }
+  <a class="ghost btn" routerLink="/admin" routerLinkActive="active">Admin</a>
 </header>
 
 <nav class="nav" aria-label="Navigation principale">
@@ -25,9 +24,6 @@
 </nav>
 
 <div class="shell">
-  <p class="sr-only" role="status" aria-live="polite">{{ status() }}</p>
-  @if (status()) { <p class="toast" aria-hidden="true">{{ status() }}</p> }
-  @if (error()) { <p class="error banner" role="alert">{{ error() }}</p> }
   @if (sync.status() === 'auth-error' && sync.gateway()) {
     <p class="error banner" role="alert">
       {{ sync.message() }}
@@ -37,43 +33,10 @@
 
   @if (showOnboarding()) {
     <section class="card onboarding" aria-labelledby="onb-h">
-      <h2 id="onb-h">Connecte cet appareil à ton serveur</h2>
-      <p>Tes liens sont enregistrés sur ton serveur (c'est ta base de données). Cet appareil n'en a pas encore de copie : c'est pourquoi la liste est vide.</p>
-      <ol>
-        <li>Vérifie l'adresse du serveur ci-dessous.</li>
-        <li>Colle ton <strong>jeton</strong> : c'est la clé d'accès à ta base (il n'y a pas de compte). Il est dans le fichier <code>.env.prod</code> du serveur.</li>
-        <li>Clique sur « Se connecter et charger mes liens ».</li>
-      </ol>
+      <h2 id="onb-h">Cet appareil n'est pas encore connecté</h2>
+      <p>Tes liens sont enregistrés sur ton serveur. Ouvre la page <a routerLink="/admin">Admin</a>, section « Technique », pour connecter cet appareil.</p>
     </section>
   }
-
-  <details class="card sync-panel" [open]="showOnboarding()">
-    <summary>{{ notConnected() ? 'Connexion au serveur' : 'Synchronisation entre appareils' }}</summary>
-    <form (submit)="connect($event)">
-      <label>URL du serveur
-        <input type="text" inputmode="url" autocomplete="off" placeholder="https://liens.example.com"
-               [value]="cfgUrl()" (input)="cfgUrl.set(val($event))" />
-      </label>
-      @if (sync.gateway()) {
-        <p class="meta">Cet appareil est connecté automatiquement par le serveur : aucun jeton à saisir.</p>
-      } @else {
-      <label>Jeton <small>(32 caractères minimum, stocké uniquement sur cet appareil)</small>
-        <input type="password" autocomplete="off" [value]="cfgToken()" (input)="cfgToken.set(val($event))"
-               [placeholder]="sync.status() === 'unconfigured' ? '' : '•••••••• (déjà enregistré)'" />
-      </label>
-      }
-      @if (cfgError()) { <p class="error" role="alert">{{ cfgError() }}</p> }
-      @if (sync.message()) { <p class="meta" role="status">{{ sync.message() }}</p> }
-      @if (sync.lastSyncAt()) { <p class="meta">Dernière synchro : {{ sync.lastSyncAt() | date: 'dd/MM/yyyy HH:mm:ss' }}</p> }
-      <div class="row">
-        <button type="submit" class="primary">{{ notConnected() ? 'Se connecter et charger mes liens' : 'Enregistrer et synchroniser' }}</button>
-        @if (sync.status() !== 'unconfigured') {
-          <button type="button" (click)="sync.syncNow()">Synchroniser maintenant</button>
-          <button type="button" class="ghost danger" (click)="disconnect()">Déconnecter</button>
-        }
-      </div>
-    </form>
-  </details>
 </div>
 
 <router-outlet />

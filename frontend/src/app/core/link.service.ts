@@ -1,5 +1,7 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { ImportError, exportToJson, importFromJson } from './backup';
+import { exportBookmarksHtml } from './export-html';
+import { ZipImportPlan, ZipImportResult, applyZipImport, exportZip, planZipImport } from './zip-backup';
 import { LinkStore } from './link-store';
 import { detectSource, normalizeCategory } from './catalog';
 import { planAdd, planMove, planRemove } from './focus';
@@ -179,6 +181,27 @@ export class LinkService {
 
   async importJson(json: string, mode: 'replace' | 'merge'): Promise<{ links: number; events: number }> {
     const r = await importFromJson(this.need(), json, mode);
+    await this.afterLocalChange();
+    return r;
+  }
+
+  /** Favoris au format HTML (importable par les navigateurs). */
+  exportHtml(): string {
+    return exportBookmarksHtml(this.links());
+  }
+
+  /** Archive ZIP pour l'IA : links.json + captures. */
+  async exportZipBytes(): Promise<Uint8Array> {
+    return exportZip(this.need());
+  }
+
+  /** Analyse une archive sans rien écrire. */
+  async planZip(bytes: Uint8Array): Promise<ZipImportPlan> {
+    return planZipImport(this.need(), bytes);
+  }
+
+  async applyZip(plan: ZipImportPlan, opts: { deleteMissing: boolean }): Promise<ZipImportResult> {
+    const r = await applyZipImport(this.need(), plan, opts);
     await this.afterLocalChange();
     return r;
   }

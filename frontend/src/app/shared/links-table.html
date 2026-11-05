@@ -1,0 +1,46 @@
+@if (searchable()) {
+<div class="filters">
+  <input type="search" placeholder="Rechercher…" aria-label="Rechercher" [value]="query()" (input)="setQuery(val($event))" />
+</div>
+}
+<p class="meta" aria-live="polite">{{ rows().length }} lien{{ rows().length > 1 ? 's' : '' }}</p>
+
+<div class="table-wrap" tabindex="0" role="region" aria-label="Tableau des liens">
+  <table>
+    <thead>
+      <tr>
+        @for (c of columns; track c.key) {
+          <th scope="col" [attr.aria-sort]="ariaSort(c.key)">
+            <button type="button" (click)="sortBy(c.key)">{{ c.label }} <span class="arrow" aria-hidden="true">{{ arrow(c.key) }}</span></button>
+          </th>
+        }
+        <th scope="col">Étiquettes</th>
+        <th scope="col">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (l of shownRows(); track l.id) {
+        <tr>
+          <td class="title"><a [href]="l.url" target="_blank" rel="noopener noreferrer">{{ l.title }}</a> @if (l.kind === 'site') { <span class="badge">site</span> }
+            <div class="meta">{{ l.domain }}</div></td>
+          <td>{{ l.source }}</td>
+          <td>@if (l.category) { <a class="badge cat" [routerLink]="['/category', l.category]">{{ l.category }}</a> }</td>
+          <td class="date">{{ l.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+          <td class="date">{{ l.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+          <td>@for (t of l.tags; track t) { <span class="badge">{{ t }}</span> {{ ' ' }} }</td>
+          <td class="actions">
+            <a class="btn small" [routerLink]="['/link', l.id]" [attr.aria-label]="'Ouvrir la fiche de ' + l.title">Ouvrir</a>
+            <app-focus-button [link]="l" />
+            <a class="btn small" [routerLink]="['/link', l.id, 'edit']" [attr.aria-label]="'Modifier ' + l.title">Modifier</a>
+            <button type="button" class="ghost danger small" (click)="remove(l)" [attr.aria-label]="'Supprimer ' + l.title">Supprimer</button>
+          </td>
+        </tr>
+      } @empty {
+        <tr><td colspan="7" class="empty">{{ svc.ready() ? 'Aucun lien ne correspond.' : 'Chargement…' }}</td></tr>
+      }
+    </tbody>
+  </table>
+</div>
+@if (rows().length > shownRows().length) {
+  <p class="more"><button type="button" (click)="more()">Afficher plus ({{ rows().length - shownRows().length }} restants)</button></p>
+}

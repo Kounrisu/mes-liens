@@ -1,13 +1,11 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { Component, OnInit, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { UNCATEGORIZED, categoryCounts } from './core/catalog';
-import { ImportError, LinkService } from './core/link.service';
+import { LinkService } from './core/link.service';
 import { SyncService } from './core/sync.service';
-import { suggestedServerUrl } from './core/sync-api';
 
 @Component({
-  imports: [DatePipe, RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet],
   selector: 'app-root',
   styleUrl: './app.css',
   templateUrl: './app.html',
@@ -15,12 +13,6 @@ import { suggestedServerUrl } from './core/sync-api';
 export class App implements OnInit {
   protected readonly svc = inject(LinkService);
   protected readonly sync = inject(SyncService);
-
-  protected readonly cfgUrl = signal('');
-  protected readonly cfgToken = signal('');
-  protected readonly cfgError = signal('');
-  protected readonly error = signal('');
-  protected readonly status = signal('');
 
   protected readonly notConnected = computed(() => this.sync.status() === 'unconfigured');
   /** Appareil neuf : ni connexion au serveur, ni aucun lien local → on guide l'utilisateur au lieu d'afficher une page vide muette. */
@@ -34,33 +26,10 @@ export class App implements OnInit {
   async ngOnInit(): Promise<void> {
     await this.svc.init();
     await this.sync.init();
-    // Servie par le serveur lui-même (production) : l'API est à la même adresse, inutile de la faire saisir.
-    this.cfgUrl.set(this.sync.serverUrl() || suggestedServerUrl(window.location));
   }
 
-  protected val(e: Event): string {
-    return (e.target as HTMLInputElement).value;
-  }
-
-  // ---- synchronisation ----
-
-  protected async connect(e: Event): Promise<void> {
-    e.preventDefault();
-    try {
-      await this.sync.configure(this.cfgUrl(), this.cfgToken());
-      this.cfgToken.set('');
-      this.cfgError.set('');
-    } catch (err) {
-      this.cfgError.set(err instanceof Error ? err.message : 'Configuration invalide.');
-    }
-  }
-
-  protected async disconnect(): Promise<void> {
-    if (confirm('Déconnecter la synchronisation ? Les données locales sont conservées.')) {
-      await this.sync.disconnect();
-      this.cfgUrl.set('');
-    }
-  }
+  /** Tant que tout va bien rien ne s'affiche ; seuls les problèmes (hors ligne, reconnexion, erreur) apparaissent. */
+  protected readonly problem = computed(() => ['offline', 'auth-error', 'error'].includes(this.sync.status()));
 
   /** Accès refusé : recharger la page fait réapparaître la demande d'identifiant du navigateur. */
   protected reconnect(): void {
@@ -69,43 +38,9 @@ export class App implements OnInit {
 
   protected statusLabel(): string {
     switch (this.sync.status()) {
-      case 'unconfigured': return 'Non synchronisé';
-      case 'syncing': return 'Synchronisation…';
-      case 'idle': return this.sync.pendingCount() ? `${this.sync.pendingCount()} à envoyer` : 'Synchronisé';
       case 'offline': return 'Hors ligne';
       case 'auth-error': return this.sync.gateway() ? 'Reconnexion requise' : 'Jeton refusé';
-      default: return 'Erreur de synchro';
+      default: return 'Erreur de mise à jour';
     }
-  }
-
-  // ---- export / import ----
-
-  protected async doExport(): Promise<void> {
-    const blob = new Blob([await this.svc.exportJson()], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `mes-liens-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  }
-
-  protected async doImport(e: Event): Promise<void> {
-    const input = e.target as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = '';
-    if (!file) return;
-    const replace = confirm('OK = REMPLACER toutes les données locales par ce fichier.\nAnnuler = FUSIONNER (le plus récent gagne).');
-    try {
-      const r = await this.svc.importJson(await file.text(), replace ? 'replace' : 'merge');
-      this.error.set('');
-      this.flash(`Import terminé : ${r.links} lien(s), ${r.events} événement(s).`);
-    } catch (err) {
-      this.error.set(err instanceof ImportError ? err.message : "Échec de l'import.");
-    }
-  }
-
-  private flash(msg: string): void {
-    this.status.set(msg);
-    setTimeout(() => this.status.set(''), 3000);
   }
 }
