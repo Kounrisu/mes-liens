@@ -35,6 +35,12 @@ public class LinkEntity {
     @Column(name = "screenshot_id")
     private UUID screenshotId;
 
+    @Column(nullable = false)
+    private String category;
+
+    @Column(nullable = false)
+    private String source;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -65,6 +71,8 @@ public class LinkEntity {
         this.tags = d.tags().toArray(String[]::new);
         this.note = d.note();
         this.screenshotId = d.screenshotId();
+        this.category = d.category();
+        this.source = d.source();
         this.createdAt = d.createdAt();
         this.updatedAt = d.updatedAt();
         this.deletedAt = d.deletedAt();
@@ -76,7 +84,7 @@ public class LinkEntity {
     }
 
     public LinkDto toDto() {
-        return new LinkDto(id, url, title, domain, java.util.List.of(tags), note, screenshotId, createdAt, updatedAt, deletedAt);
+        return new LinkDto(id, url, title, domain, java.util.List.of(tags), note, screenshotId, category, source, createdAt, updatedAt, deletedAt);
     }
 
     public Long getServerSeq() { return serverSeq; }

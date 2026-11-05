@@ -73,6 +73,29 @@ class ApiIntegrationTests {
     }
 
     @Test
+    void categorieEtSource_sontConserveesEtOptionnellesPourUnAncienClient() throws Exception {
+        UUID id = UUID.randomUUID();
+        String withCat = link(id, "formation", "2026-11-01T10:00:00Z", null)
+                .replace("\"screenshotId\":null,", "\"screenshotId\":null,\"category\":\"formation\",\"source\":\"Udemy\",");
+        mvc.perform(authed(put("/api/links/" + id)).contentType(MediaType.APPLICATION_JSON).content(withCat))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.category").value("formation"))
+                .andExpect(jsonPath("$.source").value("Udemy"));
+        mvc.perform(authed(get("/api/links/" + id))).andExpect(jsonPath("$.category").value("formation"));
+        // ancien client sans les champs : chaîne vide, pas d'erreur
+        UUID old = UUID.randomUUID();
+        mvc.perform(authed(put("/api/links/" + old)).contentType(MediaType.APPLICATION_JSON)
+                        .content(link(old, "ancien client", "2026-11-01T10:00:00Z", null)))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.category").value(""));
+        // catégorie trop longue : refusée
+        UUID big = UUID.randomUUID();
+        mvc.perform(authed(put("/api/links/" + big)).contentType(MediaType.APPLICATION_JSON)
+                        .content(link(big, "x", "2026-11-01T10:00:00Z", null)
+                                .replace("\"screenshotId\":null,", "\"screenshotId\":null,\"category\":\"" + "a".repeat(65) + "\",")))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void leplusRecentGagne_ancienIgnore_recentRemplace() throws Exception {
         UUID id = UUID.randomUUID();
         seed(id, link(id, "v2", "2026-11-02T10:00:00Z", null));

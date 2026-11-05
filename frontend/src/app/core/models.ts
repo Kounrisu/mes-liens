@@ -7,6 +7,10 @@ export interface Link {
   tags: string[];
   note: string;
   screenshotId: string | null;
+  /** Une seule catégorie par lien (formation, manga, anime, utile…). Chaîne vide = non classé. */
+  category: string;
+  /** Site d'origine (Udemy, Frontend Masters…). Détecté depuis l'URL, modifiable. */
+  source: string;
   createdAt: string;
   updatedAt: string;
   /** Tombstone : non nul = lien supprimé (conservé pour la synchronisation). */

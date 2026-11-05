@@ -1,6 +1,11 @@
 import { DBSchema, IDBPDatabase, IDBPTransaction, StoreNames, openDB } from 'idb';
 import { Link, LinkEvent } from './models';
 
+/** Liens écrits avant l'existence des catégories : le champ manque dans IndexedDB. */
+function withDefaults(l: Link): Link {
+  return l.category === undefined || l.source === undefined ? { ...l, category: l.category ?? '', source: l.source ?? '' } : l;
+}
+
 export type DirtyKind = 'link' | 'event' | 'screenshot';
 
 /** Élément modifié localement et pas encore confirmé par le serveur. `n` change à chaque nouvelle modification. */
@@ -183,12 +188,13 @@ export class LinkStore {
   }
 
   async getLink(id: string): Promise<Link | undefined> {
-    return this.db.get('links', id);
+    const l = await this.db.get('links', id);
+    return l && withDefaults(l);
   }
 
   /** Liste triée du plus récent au plus ancien (createdAt). Les tombstones sont exclus par défaut. */
   async listLinks(opts: { includeDeleted?: boolean } = {}): Promise<Link[]> {
-    const all = await this.db.getAllFromIndex('links', 'by-createdAt');
+    const all = (await this.db.getAllFromIndex('links', 'by-createdAt')).map(withDefaults);
     const out = opts.includeDeleted ? all : all.filter((l) => l.deletedAt === null);
     return out.reverse();
   }

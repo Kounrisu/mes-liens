@@ -1,5 +1,5 @@
 <header class="top">
-  <h1>mes-liens</h1>
+  <h1><a routerLink="/">mes-liens</a></h1>
   <span class="count">{{ svc.count() }} lien{{ svc.count() > 1 ? 's' : '' }}</span>
   <span class="spacer"></span>
   <span class="sync" [class.bad]="sync.status() === 'auth-error' || sync.status() === 'error'" [class.warn]="sync.status() === 'offline'" role="status">{{ statusLabel() }}</span>
@@ -9,12 +9,22 @@
   </label>
 </header>
 
-<main>
-  <p class="sr-only" role="status" aria-live="polite">{{ status() }}</p>
-  @if (status()) {
-    <p class="toast" aria-hidden="true">{{ status() }}</p>
+<nav class="nav" aria-label="Navigation principale">
+  <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Accueil</a>
+  <a routerLink="/table" routerLinkActive="active">Tableau</a>
+  <span class="sep" aria-hidden="true">|</span>
+  @for (c of categories(); track c.category) {
+    <a [routerLink]="['/category', c.category]" routerLinkActive="active">{{ c.category }} <small>{{ c.count }}</small></a>
   }
+  @if (uncategorizedCount()) {
+    <a [routerLink]="['/category', '_']" routerLinkActive="active">{{ uncategorizedLabel }} <small>{{ uncategorizedCount() }}</small></a>
+  }
+</nav>
 
+<div class="shell">
+  <p class="sr-only" role="status" aria-live="polite">{{ status() }}</p>
+  @if (status()) { <p class="toast" aria-hidden="true">{{ status() }}</p> }
+  @if (error()) { <p class="error banner" role="alert">{{ error() }}</p> }
 
   <details class="card sync-panel">
     <summary>Synchronisation entre appareils</summary>
@@ -39,100 +49,6 @@
       </div>
     </form>
   </details>
-  <section class="card add" aria-labelledby="add-h">
-    <h2 id="add-h">Enregistrer un lien</h2>
-    <form (submit)="save($event)">
-      <label>URL
-        <input type="text" inputmode="url" autocomplete="off" placeholder="https://…" required
-               [value]="url()" (input)="url.set(val($event))" />
-      </label>
-      <label>Titre <small>(optionnel)</small>
-        <input type="text" [value]="title()" (input)="title.set(val($event))" />
-      </label>
-      <label>Étiquettes <small>(séparées par des virgules)</small>
-        <input type="text" list="known-tags" autocomplete="off" placeholder="angular, veille, emploi"
-               [value]="tagsInput()" (input)="tagsInput.set(val($event))" />
-        <datalist id="known-tags">
-          @for (t of allTags(); track t.tag) { <option [value]="t.tag"></option> }
-        </datalist>
-      </label>
-      <label>Note
-        <textarea rows="2" [value]="note()" (input)="note.set(val($event))"></textarea>
-      </label>
+</div>
 
-      <div class="drop" [class.over]="dragging()"
-           (dragover)="onDragOver($event)" (dragleave)="dragging.set(false)" (drop)="onDrop($event)">
-        @if (pending(); as p) {
-          <img [src]="p.preview" alt="Aperçu de la capture à enregistrer" />
-          <button type="button" class="ghost" (click)="clearScreenshot()">Retirer la capture</button>
-        } @else {
-          <p>Colle une capture (Ctrl/Cmd + V), glisse une image ici,</p>
-          <label class="ghost btn">ou choisis un fichier
-            <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden (change)="onPick($event)" />
-          </label>
-        }
-      </div>
-
-      @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
-      <button type="submit" class="primary" [disabled]="!svc.ready()">Enregistrer</button>
-    </form>
-  </section>
-
-  <section aria-labelledby="list-h">
-    <h2 id="list-h">Mes liens</h2>
-    <div class="filters">
-      <input type="search" placeholder="Rechercher (titre, url, note, étiquette)…" aria-label="Rechercher"
-             [value]="query()" (input)="query.set(val($event))" />
-      @if (query() || activeTags().length) {
-        <button type="button" class="ghost" (click)="resetFilters()">Effacer les filtres</button>
-      }
-    </div>
-    @if (allTags().length) {
-      <ul class="tags" aria-label="Filtrer par étiquette">
-        @for (t of allTags(); track t.tag) {
-          <li>
-            <button type="button" class="tag" [class.on]="activeTags().includes(t.tag)"
-                    [attr.aria-pressed]="activeTags().includes(t.tag)" (click)="toggleTag(t.tag)">
-              {{ t.tag }} <small>{{ t.count }}</small>
-            </button>
-          </li>
-        }
-      </ul>
-    }
-
-    <p class="meta" aria-live="polite">{{ visible().length }} résultat{{ visible().length > 1 ? 's' : '' }}</p>
-
-    @if (!svc.ready()) {
-      <p>Chargement…</p>
-    } @else if (svc.count() === 0) {
-      <p class="empty">Aucun lien pour l'instant. Enregistre le premier ci-dessus.</p>
-    } @else if (visible().length === 0) {
-      <p class="empty">Aucun lien ne correspond.</p>
-    }
-
-    <ul class="grid">
-      @for (l of visible(); track l.id) {
-        <li class="card link">
-          @if (l.screenshotId && svc.screenshotUrls()[l.screenshotId]; as src) {
-            <a [href]="l.url" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
-              <img class="thumb" [src]="src" alt="" loading="lazy" />
-            </a>
-          }
-          <div class="body">
-            <h3><a [href]="l.url" target="_blank" rel="noopener noreferrer">{{ l.title }}</a></h3>
-            <p class="meta">{{ l.domain }} · {{ l.createdAt | date: 'dd/MM/yyyy HH:mm' }}</p>
-            @if (l.note) { <p class="note">{{ l.note }}</p> }
-            @if (l.tags.length) {
-              <ul class="tags">
-                @for (t of l.tags; track t) {
-                  <li><button type="button" class="tag" [class.on]="activeTags().includes(t)" (click)="toggleTag(t)">{{ t }}</button></li>
-                }
-              </ul>
-            }
-            <button type="button" class="ghost danger" (click)="remove(l)" [attr.aria-label]="'Supprimer ' + l.title">Supprimer</button>
-          </div>
-        </li>
-      }
-    </ul>
-  </section>
-</main>
+<router-outlet />

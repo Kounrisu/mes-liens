@@ -1,0 +1,53 @@
+<form (submit)="submit($event)">
+  <label>URL
+    <input type="text" inputmode="url" autocomplete="off" placeholder="https://…" required
+           [value]="url()" (input)="setUrl(val($event))" />
+  </label>
+  <label>Titre <small>(optionnel)</small>
+    <input type="text" [value]="title()" (input)="title.set(val($event))" />
+  </label>
+
+  <div class="cols">
+    <label>Catégorie <small>(choisis ou saisis une nouvelle)</small>
+      <input type="text" list="form-categories" autocomplete="off" placeholder="formation, manga, anime, utile…"
+             [value]="category()" (input)="setCategory(val($event))" />
+      <datalist id="form-categories">
+        @for (c of categories(); track c) { <option [value]="c"></option> }
+      </datalist>
+    </label>
+    <label>Source <small>(site : Udemy, Frontend Masters… détectée si connue)</small>
+      <input type="text" autocomplete="off" [value]="source()" (input)="setSource(val($event))" />
+    </label>
+  </div>
+
+  <label>Étiquettes <small>(séparées par des virgules)</small>
+    <input type="text" list="form-tags" autocomplete="off" placeholder="angular, veille, emploi"
+           [value]="tagsInput()" (input)="tagsInput.set(val($event))" />
+    <datalist id="form-tags">
+      @for (t of knownTags(); track t) { <option [value]="t"></option> }
+    </datalist>
+  </label>
+  <label>Note
+    <textarea rows="3" [value]="note()" (input)="note.set(val($event))"></textarea>
+  </label>
+
+  <div class="drop" [class.over]="dragging()"
+       (dragover)="onDragOver($event)" (dragleave)="dragging.set(false)" (drop)="onDrop($event)">
+    @if (pending(); as p) {
+      <img [src]="p.preview" alt="Aperçu de la nouvelle capture" />
+      <button type="button" class="ghost" (click)="clearPending()">Annuler cette capture</button>
+    } @else if (currentShot(); as shot) {
+      <img [src]="shot" alt="Capture actuelle" />
+      <button type="button" class="ghost" (click)="removeShot.set(true)">Retirer la capture</button>
+      <p>ou colle / glisse une autre image pour la remplacer</p>
+    } @else {
+      <p>Colle une capture (Ctrl/Cmd + V), glisse une image ici,</p>
+      <label class="ghost btn">ou choisis un fichier
+        <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden (change)="onPick($event)" />
+      </label>
+    }
+  </div>
+
+  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
+  <button type="submit" class="primary" [disabled]="!svc.ready() || busy()">{{ link() ? 'Enregistrer les modifications' : 'Enregistrer' }}</button>
+</form>

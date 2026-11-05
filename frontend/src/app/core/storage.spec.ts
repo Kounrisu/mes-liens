@@ -12,7 +12,7 @@ const link = (id: string, over: Partial<Link> = {}): Link => ({
   domain: 'example.com',
   tags: ['angular', 'veille'],
   note: 'à relire',
-  screenshotId: null,
+  screenshotId: null, category: '', source: '',
   createdAt: '2026-11-01T10:00:00.000Z',
   updatedAt: '2026-11-01T10:00:00.000Z',
   deletedAt: null,
@@ -89,13 +89,16 @@ describe('migration de la base', () => {
         db.createObjectStore('screenshots', { keyPath: 'id' });
       },
     });
-    await v2.put('links', link('ancien'));
+    const { category: _c, source: _s, ...legacy } = link('ancien'); // lien d'avant les catégories : champs absents
+    await v2.put('links', legacy);
     await v2.put('events', event('e-ancien', 'ancien', '2026-11-01T10:00:00.000Z'));
     v2.close();
 
     const migrated = await LinkStore.open(name);
     expect((await migrated.listDirty()).map((d) => d.key).sort()).toEqual(['event:e-ancien', 'link:ancien']);
     expect((await migrated.getLink('ancien'))?.title).toBe('Titre ancien'); // données intactes
+    expect(await migrated.getLink('ancien')).toMatchObject({ category: '', source: '' }); // champs manquants complétés
+    expect((await migrated.listLinks())[0]).toMatchObject({ category: '', source: '' });
     migrated.close();
   });
 });

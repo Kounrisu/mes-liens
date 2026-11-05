@@ -15,6 +15,15 @@ public record LinkDto(
         @NotNull @Size(max = 50) List<@NotBlank @Size(max = 64) String> tags,
         @NotNull @Size(max = 20000) String note,
         UUID screenshotId,
+        @Size(max = 64) String category,
+        @Size(max = 100) String source,
         @NotNull Instant createdAt,
         @NotNull Instant updatedAt,
-        Instant deletedAt) {}
+        Instant deletedAt) {
+
+    /** Tolérant : un ancien client qui n'envoie pas category/source reçoit une chaîne vide (pas une erreur). */
+    public LinkDto {
+        category = category == null ? "" : category.strip();
+        source = source == null ? "" : source.strip();
+    }
+}

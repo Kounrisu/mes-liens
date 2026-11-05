@@ -78,6 +78,9 @@ function validateLink(v: unknown, i: number): Link {
     tags: tags as string[],
     note: reqString(v, 'note', where, true),
     screenshotId: screenshotId as string | null,
+    // Absents des exports faits avant l'existence des catégories : chaîne vide.
+    category: optString(v, 'category', where),
+    source: optString(v, 'source', where),
     createdAt: date('createdAt'),
     updatedAt: date('updatedAt'),
     deletedAt: deletedAt as string | null,
@@ -106,6 +109,13 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 function reqString(o: Record<string, unknown>, key: string, where: string, allowEmpty = false): string {
   const v = o[key];
   if (typeof v !== 'string' || (!allowEmpty && v === '')) throw new ImportError(`${where} : « ${key} » invalide.`);
+  return v;
+}
+
+function optString(o: Record<string, unknown>, key: string, where: string): string {
+  const v = o[key];
+  if (v === undefined || v === null) return '';
+  if (typeof v !== 'string') throw new ImportError(`${where} : « ${key} » invalide.`);
   return v;
 }
 
