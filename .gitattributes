@@ -1,0 +1,5 @@
+# Les fichiers qui s'exécutent sous Linux (VPS, conteneurs) doivent garder des fins de ligne LF, même si git est configuré en CRLF sous Windows.
+infra/** text eol=lf
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.yml text eol=lf
