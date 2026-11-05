@@ -1,3 +1,4 @@
+import { I18nService, TranslatePipe } from '../core/i18n';
 import {
   Component,
   HostListener,
@@ -10,6 +11,7 @@ import {
   signal,
 } from '@angular/core';
 import { findSiteForUrl, sitesOf } from '../core/sites';
+import { sourceKey, sourcesOf } from '../core/sources';
 import {
   YOUTUBE_CATEGORIES,
   categoryCounts,
@@ -27,10 +29,11 @@ import { RouterLink } from '@angular/router';
 /** Formulaire unique pour créer (sans `link`) et modifier (avec `link`) : mêmes champs, même validation. */
 @Component({
   selector: 'app-link-form',
-  imports: [LibraryEditor, RouterLink],
+  imports: [TranslatePipe, LibraryEditor, RouterLink],
   templateUrl: './link-form.html',
 })
 export class LinkForm implements OnInit {
+  protected readonly i18n = inject(I18nService);
   protected readonly svc = inject(LinkService);
 
   readonly link = input<Link | undefined>(undefined);
@@ -59,6 +62,19 @@ export class LinkForm implements OnInit {
   protected readonly siteUrl = signal('');
   protected readonly siteBusy = signal(false);
   protected readonly siteError = signal('');
+  protected readonly sourceOptions = computed(() => {
+    const options = sourcesOf(
+      this.svc.links().filter((l) => l.kind !== 'site' || l.id !== this.link()?.id),
+    );
+    const name = this.source().trim();
+    if (name && !options.some((s) => s.key === sourceKey(name)))
+      options.push({ key: sourceKey(name), name, sites: [], links: [] });
+    return options.sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+  });
+  protected readonly selectedSource = computed(() => {
+    const parent = this.sites().find((s) => s.id === this.parentId());
+    return sourceKey(this.source() || parent?.title || '');
+  });
   protected readonly knownSources = computed(() =>
     [
       ...new Set([
@@ -186,6 +202,18 @@ export class LinkForm implements OnInit {
     }
   }
 
+  protected pickSource(key: string): void {
+    this.parentTouched = this.sourceTouched = true;
+    const source = this.sourceOptions().find((s) => s.key === key);
+    const site = source
+      ? (findSiteForUrl(source.sites, normalizeUrl(this.url())) ?? source.sites[0])
+      : undefined;
+    this.parentId.set(site?.id ?? '');
+    this.source.set(source?.name ?? '');
+    if (!this.categoryTouched && !this.category())
+      this.category.set(source?.sites[0]?.category ?? '');
+  }
+
   protected openSiteCreator(): void {
     this.siteName.set(this.source());
     const url = normalizeUrl(this.url());
@@ -245,7 +273,13 @@ export class LinkForm implements OnInit {
 
   protected setSource(v: string): void {
     this.sourceTouched = true;
+    this.parentTouched = true;
     this.source.set(v);
+    const option = this.sourceOptions().find((s) => s.key === sourceKey(v));
+    const site = option
+      ? (findSiteForUrl(option.sites, normalizeUrl(this.url())) ?? option.sites[0])
+      : undefined;
+    this.parentId.set(site?.id ?? '');
   }
 
   // ---- captures : coller, glisser-déposer, choisir un fichier ----
@@ -300,7 +334,7 @@ export class LinkForm implements OnInit {
     if (
       !this.link() &&
       this.duplicates().length &&
-      !confirm('Cette adresse est déjà enregistrée. Créer quand même un autre lien ?')
+      !confirm(this.i18n.t('Cette adresse est déjà enregistrée. Créer quand même un autre lien ?'))
     )
       return;
     const url = normalizeUrl(this.url());

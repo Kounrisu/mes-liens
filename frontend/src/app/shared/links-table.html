@@ -2,37 +2,47 @@
   @if (searchable()) {
     <input
       type="search"
-      placeholder="Rechercher…"
-      aria-label="Rechercher"
+      [placeholder]="'Rechercher…' | t"
+      [attr.aria-label]="'Rechercher' | t"
       [value]="query()"
       (input)="setQuery(val($event))"
     />
   }
-  <select aria-label="Filtrer par source" [value]="source()" (change)="setSource(val($event))">
-    <option value="">Toutes les sources</option>
+  <select
+    [attr.aria-label]="'Filtrer par source' | t"
+    [value]="source()"
+    (change)="setSource(val($event))"
+  >
+    <option value="">{{ 'Toutes les sources' | t }}</option>
     @for (s of sources(); track s) {
       <option [value]="s" [selected]="source() === s">{{ s }}</option>
     }
   </select>
-  <select aria-label="Filtrer par étiquette" [value]="tag()" (change)="setTag(val($event))">
-    <option value="">Toutes les étiquettes</option>
+  <select
+    [attr.aria-label]="'Filtrer par étiquette' | t"
+    [value]="tag()"
+    (change)="setTag(val($event))"
+  >
+    <option value="">{{ 'Toutes les étiquettes' | t }}</option>
     @for (t of tags(); track t.tag) {
       <option [value]="t.tag" [selected]="tag() === t.tag">{{ t.tag }} ({{ t.count }})</option>
     }
   </select>
   @if (query() || source() || tag()) {
-    <button type="button" class="ghost" (click)="resetFilters()">Effacer les filtres</button>
+    <button type="button" class="ghost" (click)="resetFilters()">
+      {{ 'Effacer les filtres' | t }}
+    </button>
   }
 </div>
 <app-selection-toolbar [links]="rows()" [shown]="shownRows()" [(selected)]="selected" />
-<div class="table-wrap" tabindex="0" role="region" aria-label="Tableau des liens">
+<div class="table-wrap" tabindex="0" role="region" [attr.aria-label]="'Tableau des liens' | t">
   <table>
     <thead>
       <tr>
         <th scope="col" class="check-col">
           <input
             type="checkbox"
-            aria-label="Sélectionner tous les liens filtrés"
+            [attr.aria-label]="'Sélectionner tous les liens filtrés' | t"
             [checked]="allPicked()"
             [indeterminate]="picked().length > 0 && !allPicked()"
             [disabled]="!rows().length"
@@ -42,12 +52,12 @@
         @for (c of columns; track c.key) {
           <th scope="col" [attr.aria-sort]="ariaSort(c.key)">
             <button type="button" (click)="sortBy(c.key)">
-              {{ c.label }} <span class="arrow" aria-hidden="true">{{ arrow(c.key) }}</span>
+              {{ c.label | t }} <span class="arrow" aria-hidden="true">{{ arrow(c.key) }}</span>
             </button>
           </th>
         }
-        <th scope="col">Étiquettes</th>
-        <th scope="col">Actions</th>
+        <th scope="col">{{ 'Étiquettes' | t }}</th>
+        <th scope="col">{{ 'Actions' | t }}</th>
       </tr>
     </thead>
     <tbody>
@@ -56,7 +66,7 @@
           <td class="check-col">
             <input
               type="checkbox"
-              [attr.aria-label]="'Sélectionner ' + l.title"
+              [attr.aria-label]="'Sélectionner ' + l.title | t"
               [checked]="selected().has(l.id)"
               (change)="toggle(l.id)"
             />
@@ -64,12 +74,12 @@
           <td class="title">
             <a [href]="l.url" target="_blank" rel="noopener noreferrer">{{ l.title }}</a>
             @if (l.kind === 'site') {
-              <span class="badge">site</span>
+              <span class="badge"> {{ 'site' | t }} </span>
             }
             <div class="meta">
-              {{ l.domain }} · {{ states[libraryOf(l).learningStatus] }}
+              {{ l.domain }} · {{ states[libraryOf(l).learningStatus] | t }}
               @if (libraryOf(l).archived) {
-                · Archivé
+                {{ '· Archivé' | t }}
               }
             </div>
             @if (insights.records()[l.id]; as check) {
@@ -77,23 +87,27 @@
                 <span
                   class="badge"
                   [title]="
-                    check.checkedAt
-                      ? 'Vérifié le ' + (check.checkedAt | date: 'dd/MM/yyyy HH:mm')
+                    (check.checkedAt
+                      ? 'Vérifié le ' + (check.checkedAt | localDate: 'dd/MM/yyyy HH:mm')
                       : 'En attente'
+                    ) | t
                   "
-                  >{{ healthLabels[check.status] || check.status }}</span
                 >
+                  {{ healthLabels[check.status] || check.status | t }}
+                </span>
               }
             }
           </td>
           <td>{{ l.source }}</td>
           <td>
             @if (l.category) {
-              <a class="badge cat" [routerLink]="['/category', l.category]">{{ l.category }}</a>
+              <a class="badge cat" [routerLink]="['/category', l.category]">{{
+                l.category | categoryLabel
+              }}</a>
             }
           </td>
-          <td class="date">{{ l.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
-          <td class="date">{{ l.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</td>
+          <td class="date">{{ l.createdAt | localDate: 'dd/MM/yyyy HH:mm' }}</td>
+          <td class="date">{{ l.updatedAt | localDate: 'dd/MM/yyyy HH:mm' }}</td>
           <td>
             @for (t of l.tags; track t) {
               <span class="badge">{{ t }}</span> {{ ' ' }}
@@ -103,30 +117,32 @@
             <a
               class="btn small"
               [routerLink]="['/link', l.id]"
-              [attr.aria-label]="'Ouvrir la fiche de ' + l.title"
-              >Ouvrir</a
+              [attr.aria-label]="'Ouvrir la fiche de ' + l.title | t"
             >
+              {{ 'Ouvrir' | t }}
+            </a>
             <app-favorite-button [link]="l" /><app-focus-button [link]="l" />
             <a
               class="btn small"
               [routerLink]="['/link', l.id, 'edit']"
-              [attr.aria-label]="'Modifier ' + l.title"
-              >Modifier</a
+              [attr.aria-label]="'Modifier ' + l.title | t"
             >
+              {{ 'Modifier' | t }}
+            </a>
             <button
               type="button"
               class="ghost danger small"
               (click)="remove(l)"
-              [attr.aria-label]="'Supprimer ' + l.title"
+              [attr.aria-label]="'Supprimer ' + l.title | t"
             >
-              Supprimer
+              {{ 'Supprimer' | t }}
             </button>
           </td>
         </tr>
       } @empty {
         <tr>
           <td colspan="8" class="empty">
-            {{ svc.ready() ? 'Aucun lien ne correspond.' : 'Chargement…' }}
+            {{ (svc.ready() ? 'Aucun lien ne correspond.' : 'Chargement…') | t }}
           </td>
         </tr>
       }
@@ -136,7 +152,7 @@
 @if (rows().length > shownRows().length) {
   <p class="more">
     <button type="button" (click)="more()">
-      Afficher plus ({{ rows().length - shownRows().length }} restants)
+      {{ 'Afficher plus ({0} restants)' | t: [rows().length - shownRows().length] }}
     </button>
   </p>
 }

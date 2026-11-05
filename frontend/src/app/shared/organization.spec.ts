@@ -96,7 +96,7 @@ describe('inline site creation', () => {
     const site = svc.links().find((l) => l.kind === 'site')!;
     expect(c.parentId()).toBe(site.id);
     expect(c.source()).toBe('master.dev');
-    expect(f.nativeElement.textContent).toContain('master.dev (master.dev)');
+    expect(f.nativeElement.querySelector('select')?.textContent).toContain('master.dev');
     c.openSiteCreator();
     await c.createSite();
     expect(svc.links().filter((l) => l.kind === 'site')).toHaveLength(1);

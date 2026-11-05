@@ -1,8 +1,8 @@
+import { CategoryLabelPipe, TranslatePipe, LocalDatePipe } from '../core/i18n';
 import { FavoriteButton } from '../shared/favorite-button';
 import { libraryOf, LEARNING_STATES } from '../core/library';
 import { LinkInsight } from '../shared/link-insight';
 import { Component, computed, inject } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { UNCATEGORIZED, categoryCounts } from '../core/catalog';
 import { focusOrder } from '../core/focus';
@@ -13,7 +13,7 @@ import { FocusButton } from '../shared/focus-button';
 /** Tableau de bord : mes favoris à apprendre, classés par rang, et un aperçu de la collection. */
 @Component({
   selector: 'app-focus',
-  imports: [FavoriteButton, DatePipe, RouterLink, FocusButton, LinkInsight],
+  imports: [CategoryLabelPipe, TranslatePipe, FavoriteButton, LocalDatePipe, RouterLink, FocusButton, LinkInsight],
   templateUrl: './focus.html',
 })
 export class FocusPage {

@@ -5,7 +5,7 @@
       type="text"
       inputmode="url"
       autocomplete="off"
-      placeholder="https://…"
+      [placeholder]="'https://…' | t"
       required
       [value]="url()"
       (input)="setUrl(val($event))"
@@ -13,14 +13,14 @@
   </label>
   @if (duplicates().length) {
     <aside class="notice" role="status">
-      Cette adresse existe déjà :
+      {{ 'Cette adresse existe déjà :' | t }}
       @for (l of duplicates(); track l.id) {
         <a [routerLink]="['/link', l.id]">{{ l.title }}</a>
       }
     </aside>
   }
-  <label
-    >Titre <small>(optionnel)</small>
+  <label>
+    {{ 'Titre' | t }} <small> {{ '(optionnel)' | t }} </small>
     <input type="text" [value]="title()" (input)="title.set(val($event))" />
   </label>
 
@@ -30,76 +30,87 @@
       [checked]="isSite()"
       (change)="setSiteFlag($any($event.target).checked)"
     />
-    <span
-      >C'est un site / une plateforme
-      <small
-        >(ex. Udemy, app.ultimatecourses.com, youtube.com) : tu pourras y rattacher des liens vers
-        ses formations</small
-      ></span
+    <span>
+      {{ "C'est un site / une plateforme" | t }}
+      <small>
+        {{
+          '(ex. Udemy, app.ultimatecourses.com, youtube.com) : tu pourras y rattacher des liens vers ses formations'
+            | t
+        }}
+      </small></span
     >
   </label>
   @if (!isSite()) {
-    <label
-      >Rattaché au site <small>(proposé d'après l'adresse si le site est déjà enregistré)</small>
-      <select [value]="parentId()" (change)="pickParent(val($event))">
-        <option value="" [selected]="parentId() === ''">— aucun —</option>
-        @for (s of sites(); track s.id) {
-          <option [value]="s.id" [selected]="parentId() === s.id">
-            {{ s.title }} ({{ s.domain }})
+    <label>
+      {{ 'Source / site de rattachement' | t }}
+      <select [value]="selectedSource()" (change)="pickSource(val($event))">
+        <option value="" [selected]="selectedSource() === ''">{{ '— aucun —' | t }}</option>
+        @for (s of sourceOptions(); track s.key) {
+          <option [value]="s.key" [selected]="selectedSource() === s.key">
+            {{ s.name }}
           </option>
         }
       </select>
     </label>
     <p class="meta">
-      La source est un nom libre. Pour la retrouver dans cette liste, enregistre-la comme site.
+      {{ 'Toutes les sources enregistrées sont proposées, avec ou sans fiche de site.' | t }}
     </p>
+    <a class="btn" routerLink="/sources">
+      {{ 'Gérer les sources : ajouter, modifier, supprimer' | t }}
+    </a>
     <button type="button" class="ghost" (click)="openSiteCreator()" [disabled]="siteBusy()">
-      + Créer un site depuis la source
+      {{ '+ Créer un site depuis la source' | t }}
     </button>
     @if (creatingSite()) {
       <fieldset class="card" [disabled]="siteBusy()">
-        <legend>Nouveau site / plateforme</legend>
+        <legend>{{ 'Nouveau site / plateforme' | t }}</legend>
         <div class="cols">
-          <label
-            >Nom du site<input
+          <label>
+            {{ 'Nom du site' | t }}
+            <input
               type="text"
               maxlength="100"
               [value]="siteName()"
               (input)="siteName.set(val($event))"
           /></label>
-          <label
-            >Adresse du site<input
+          <label>
+            {{ 'Adresse du site' | t }}
+            <input
               type="text"
               inputmode="url"
-              placeholder="https://…"
+              [placeholder]="'https://…' | t"
               [value]="siteUrl()"
               (input)="siteUrl.set(val($event))"
           /></label>
         </div>
         <p class="meta">
-          Le site sera enregistré immédiatement et sélectionné pour ce lien. Vérifie son adresse.
+          {{
+            'Le site sera enregistré immédiatement et sélectionné pour ce lien. Vérifie son adresse.'
+              | t
+          }}
         </p>
         <div class="row">
           <button type="button" class="primary" (click)="createSite()">
-            {{ siteBusy() ? 'Enregistrement…' : 'Créer le site et le sélectionner' }}
+            {{ (siteBusy() ? 'Enregistrement…' : 'Créer le site et le sélectionner') | t }}
           </button>
-          <button type="button" (click)="creatingSite.set(false)">Annuler</button>
+          <button type="button" (click)="creatingSite.set(false)">{{ 'Annuler' | t }}</button>
         </div>
         @if (siteError()) {
-          <p class="error" role="alert">{{ siteError() }}</p>
+          <p class="error" role="alert">{{ siteError() | t }}</p>
         }
       </fieldset>
     }
   }
 
   <div class="cols">
-    <label
-      >Catégorie <small>Utilise / pour les sous-catégories : développement / angular</small>
+    <label>
+      {{ 'Catégorie' | t }}
+      <small> {{ 'Utilise / pour les sous-catégories : développement / angular' | t }} </small>
       <input
         type="text"
         list="form-categories"
         autocomplete="off"
-        placeholder="formation, manga, anime, utile…"
+        [placeholder]="'formation, manga, anime, utile…' | t"
         [value]="category()"
         (input)="setCategory(val($event))"
       />
@@ -109,8 +120,9 @@
         }
       </datalist>
     </label>
-    <label
-      >Source <small>(site : Udemy, Frontend Masters… détectée si connue)</small>
+    <label>
+      {{ 'Source' | t }}
+      <small> {{ '(site : Udemy, Frontend Masters… détectée si connue)' | t }} </small>
       <input
         type="text"
         maxlength="100"
@@ -127,13 +139,13 @@
     </label>
   </div>
 
-  <label
-    >Étiquettes <small>(séparées par des virgules)</small>
+  <label>
+    {{ 'Étiquettes' | t }} <small> {{ '(séparées par des virgules)' | t }} </small>
     <input
       type="text"
       list="form-tags"
       autocomplete="off"
-      placeholder="angular, veille, emploi"
+      [placeholder]="'angular, veille, emploi' | t"
       [value]="tagsInput()"
       (input)="tagsInput.set(val($event))"
     />
@@ -143,8 +155,8 @@
       }
     </datalist>
   </label>
-  <label
-    >Pourquoi je garde ce lien / notes
+  <label>
+    {{ 'Pourquoi je garde ce lien / notes' | t }}
     <textarea rows="3" [value]="note()" (input)="note.set(val($event))"></textarea>
   </label>
 
@@ -158,16 +170,20 @@
     (drop)="onDrop($event)"
   >
     @if (pending(); as p) {
-      <img [src]="p.preview" alt="Aperçu de la nouvelle capture" />
-      <button type="button" class="ghost" (click)="clearPending()">Annuler cette capture</button>
+      <img [src]="p.preview" alt="" [alt]="'Aperçu de la nouvelle capture' | t" />
+      <button type="button" class="ghost" (click)="clearPending()">
+        {{ 'Annuler cette capture' | t }}
+      </button>
     } @else if (currentShot(); as shot) {
-      <img [src]="shot" alt="Capture actuelle" />
-      <button type="button" class="ghost" (click)="removeShot.set(true)">Retirer la capture</button>
-      <p>ou colle / glisse une autre image pour la remplacer</p>
+      <img [src]="shot" alt="" [alt]="'Capture actuelle' | t" />
+      <button type="button" class="ghost" (click)="removeShot.set(true)">
+        {{ 'Retirer la capture' | t }}
+      </button>
+      <p>{{ 'ou colle / glisse une autre image pour la remplacer' | t }}</p>
     } @else {
-      <p>Colle une capture (Ctrl/Cmd + V), glisse une image ici,</p>
-      <label class="ghost btn"
-        >ou choisis un fichier
+      <p>{{ 'Colle une capture (Ctrl/Cmd + V), glisse une image ici,' | t }}</p>
+      <label class="ghost btn">
+        {{ 'ou choisis un fichier' | t }}
         <input
           type="file"
           accept="image/png,image/jpeg,image/webp,image/gif"
@@ -179,9 +195,9 @@
   </div>
 
   @if (error()) {
-    <p class="error" role="alert">{{ error() }}</p>
+    <p class="error" role="alert">{{ error() | t }}</p>
   }
   <button type="submit" class="primary" [disabled]="!svc.ready() || busy() || siteBusy()">
-    {{ link() ? 'Enregistrer les modifications' : 'Enregistrer' }}
+    {{ (link() ? 'Enregistrer les modifications' : 'Enregistrer') | t }}
   </button>
 </form>

@@ -11,7 +11,8 @@ import {
 import { LinkStore } from './link-store';
 import { detectSource, normalizeCategory } from './catalog';
 import { planAdd, planMove, planRemove } from './focus';
-import { domainOf } from './link-utils';
+import { domainOf, normalizeUrl } from './link-utils';
+import { sourceKey, sourcesOf } from './sources';
 import { Link, LinkEvent, LinkKind } from './models';
 import { checkHierarchy } from './sites';
 import { LibraryData, libraryOf, validateLibrary, categoryWithin } from './library';
@@ -225,6 +226,77 @@ export class LinkService {
     );
     if (n) await this.afterLocalChange();
     return n;
+  }
+
+  /** Sources are ordinary site records plus existing source labels: fully backed up and synced. */
+  async saveSource(originalKey: string | null, name: string, address: string): Promise<void> {
+    const title = name.trim();
+    if (!title || title.length > 100)
+      throw new Error('Le nom de source doit contenir entre 1 et 100 caractères.');
+    const key = sourceKey(title);
+    const catalogue = sourcesOf(this.links());
+    if (catalogue.some((s) => s.key === key && s.key !== originalKey))
+      throw new Error('Cette source existe déjà. Sélectionne-la dans la liste.');
+    const entry = catalogue.find((s) => s.key === originalKey);
+    if (originalKey !== null && !entry) throw new Error('Cette source n’existe plus.');
+    const url = address.trim() ? normalizeUrl(address) : null;
+    if (address.trim() && !url) throw new Error('Adresse du site invalide.');
+    if (!entry && !url)
+      throw new Error('Indique l’adresse du site pour enregistrer une nouvelle source.');
+    if (entry?.sites.length && !url) throw new Error('Indique l’adresse du site.');
+    if (!entry) {
+      await this.add({
+        url: url!,
+        title,
+        source: title,
+        category: '',
+        tags: [],
+        note: '',
+        kind: 'site',
+        parentId: null,
+        screenshot: null,
+      });
+      return;
+    }
+    const siteIds = new Set(entry.sites.map((s) => s.id));
+    // A text-only source can be renamed without inventing a homepage.
+    const count = await this.need().mutateLinks(
+      this.links().map((l) => l.id),
+      (l) => {
+        const isSite = siteIds.has(l.id);
+        const hasLabel = sourceKey(l.source) === originalKey;
+        if (!isSite && !hasLabel && !siteIds.has(l.parentId ?? '')) return l;
+        return {
+          ...l,
+          ...(isSite
+            ? {
+                title,
+                ...(url && l.id === entry.sites[0]?.id ? { url, domain: domainOf(url) } : {}),
+              }
+            : {}),
+          ...(hasLabel || isSite ? { source: title } : {}),
+        };
+      },
+    );
+    if (count) await this.afterLocalChange();
+  }
+
+  async removeSource(key: string): Promise<number> {
+    const entry = sourcesOf(this.links()).find((s) => s.key === key);
+    if (!entry) return 0;
+    const siteIds = new Set(entry.sites.map((s) => s.id));
+    const now = new Date().toISOString();
+    const count = await this.need().mutateLinks(
+      this.links().map((l) => l.id),
+      (l) => ({
+        ...l,
+        ...(siteIds.has(l.id) ? { deletedAt: now } : {}),
+        ...(sourceKey(l.source) === key ? { source: '' } : {}),
+        ...(siteIds.has(l.parentId ?? '') ? { parentId: null } : {}),
+      }),
+    );
+    if (count) await this.afterLocalChange();
+    return count;
   }
 
   async addToFocus(id: string): Promise<void> {

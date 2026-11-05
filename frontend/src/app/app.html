@@ -1,35 +1,53 @@
 <header class="top">
   <h1><a routerLink="/">mes-liens</a></h1>
-  <span class="count">{{ svc.count() }} lien{{ svc.count() > 1 ? 's' : '' }}</span>
+  <span class="count"> {{ '{0} lien{1}' | t: [svc.count(), svc.count() > 1 ? 's' : ''] }} </span>
   <span class="spacer"></span>
+  <label class="language-choice"
+    ><span class="sr-only">{{ 'Langue' | t }}</span>
+    <select
+      [attr.aria-label]="'Langue' | t"
+      [value]="i18n.language()"
+      (change)="i18n.setLanguage($any($event.target).value)"
+    >
+      <option value="fr" lang="fr">Français</option>
+      <option value="en" lang="en">English</option>
+    </select>
+  </label>
   @if (problem()) {
-    <a class="sync bad" routerLink="/admin" role="status">{{ statusLabel() }}</a>
+    <a class="sync bad" routerLink="/admin" role="status"> {{ statusLabel() | t }} </a>
   }
   <a class="ghost btn" routerLink="/admin" routerLinkActive="active">Admin</a>
 </header>
 
-<nav class="nav" aria-label="Navigation principale">
-  <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
-    >Accueil</a
+<nav class="nav" [attr.aria-label]="'Navigation principale' | t">
+  <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+    {{ 'Accueil' | t }}
+  </a>
+  <a routerLink="/focus" routerLinkActive="active">
+    {{ '★ Focus' | t }} <small>{{ focusCount() }}</small></a
   >
-  <a routerLink="/focus" routerLinkActive="active"
-    >★ Focus <small>{{ focusCount() }}</small></a
+  <a routerLink="/library" routerLinkActive="active"> {{ 'Bibliothèque · À trier' | t }} </a>
+  <a routerLink="/sites" routerLinkActive="active">
+    {{ 'Sites' | t }} <small>{{ siteCount() }}</small></a
   >
-  <a routerLink="/library" routerLinkActive="active">Bibliothèque · À trier</a>
-  <a routerLink="/sites" routerLinkActive="active"
-    >Sites <small>{{ siteCount() }}</small></a
+  <a routerLink="/sources" routerLinkActive="active">
+    {{ 'Sources' | t }} <small>{{ sourceCount() }}</small></a
   >
-  <a routerLink="/table" routerLinkActive="active">Tableau</a>
-  <a routerLink="/youtube" routerLinkActive="active">YouTube</a>
+  <a routerLink="/table" routerLinkActive="active">
+    {{ 'Tableau' | t }} <small>{{ tableCount() }}</small></a
+  >
+  <a routerLink="/youtube" routerLinkActive="active"
+    >YouTube <small>{{ youtubeCount() }}</small></a
+  >
   <span class="sep" aria-hidden="true">|</span>
   @for (c of categories(); track c.category) {
     <a [routerLink]="['/category', c.category]" routerLinkActive="active"
-      >{{ c.category }} <small>{{ c.count }}</small></a
+      >{{ c.category | categoryLabel }} <small>{{ c.count }}</small></a
     >
   }
   @if (uncategorizedCount()) {
-    <a [routerLink]="['/category', '_']" routerLinkActive="active"
-      >{{ uncategorizedLabel }} <small>{{ uncategorizedCount() }}</small></a
+    <a [routerLink]="['/category', '_']" routerLinkActive="active">
+      {{ uncategorizedLabel | t }} <small>{{ uncategorizedCount() }}</small></a
     >
   }
 </nav>
@@ -37,17 +55,20 @@
 <div class="shell">
   @if (sync.status() === 'auth-error' && sync.gateway()) {
     <p class="error banner" role="alert">
-      {{ sync.message() }}
-      <button type="button" class="primary" (click)="reconnect()">Se reconnecter</button>
+      {{ sync.message() | t }}
+      <button type="button" class="primary" (click)="reconnect()">
+        {{ 'Se reconnecter' | t }}
+      </button>
     </p>
   }
 
   @if (showOnboarding()) {
     <section class="card onboarding" aria-labelledby="onb-h">
-      <h2 id="onb-h">Cet appareil n'est pas encore connecté</h2>
+      <h2 id="onb-h">{{ "Cet appareil n'est pas encore connecté" | t }}</h2>
       <p>
-        Tes liens sont enregistrés sur ton serveur. Ouvre la page <a routerLink="/admin">Admin</a>,
-        section « Technique », pour connecter cet appareil.
+        {{ 'Tes liens sont enregistrés sur ton serveur. Ouvre la page' | t }}
+        <a routerLink="/admin">Admin</a>
+        {{ ', section « Technique », pour connecter cet appareil.' | t }}
       </p>
     </section>
   }

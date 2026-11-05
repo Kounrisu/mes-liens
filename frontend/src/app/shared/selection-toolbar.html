@@ -1,65 +1,69 @@
 <fieldset class="selection-bar" [disabled]="busy()">
-  <legend class="sr-only">Actions sur la sélection</legend>
+  <legend class="sr-only">{{ 'Actions sur la sélection' | t }}</legend>
   <div class="row batch">
     <p class="meta" aria-live="polite">
-      <strong>{{ picked().length }} sélectionné(s)</strong> sur {{ links().length }} liens
+      <strong> {{ '{0} sélectionné(s)' | t: [picked().length] }} </strong>
+      {{ 'sur {0} liens' | t: [links().length] }}
     </p>
     @if (shown().length < links().length) {
       <button type="button" class="small" [disabled]="!shown().length" (click)="select(false)">
-        Sélectionner les {{ shown().length }} affichés
+        {{ 'Sélectionner les {0} affichés' | t: [shown().length] }}
       </button>
     }
     <button type="button" class="small" [disabled]="!links().length" (click)="select(true)">
-      Tout sélectionner ({{ links().length }})
+      {{ 'Tout sélectionner ({0})' | t: [links().length] }}
     </button>
     @if (picked().length) {
-      <button type="button" class="small ghost" (click)="clear()">Désélectionner</button>
+      <button type="button" class="small ghost" (click)="clear()">
+        {{ 'Désélectionner' | t }}
+      </button>
     }
   </div>
   @if (picked().length) {
     <div class="row">
       <button type="button" [attr.aria-expanded]="panel() === 'tags'" (click)="open('tags')">
-        Étiquettes
+        {{ 'Étiquettes' | t }}
       </button>
       <button
         type="button"
         [attr.aria-expanded]="panel() === 'category'"
         (click)="open('category')"
       >
-        Catégorie
+        {{ 'Catégorie' | t }}
       </button>
-      <button type="button" (click)="apply('favorite')">★ Ajouter aux favoris</button>
-      <button type="button" (click)="apply('unfavorite')">Retirer des favoris</button>
+      <button type="button" (click)="apply('favorite')">{{ '★ Ajouter aux favoris' | t }}</button>
+      <button type="button" (click)="apply('unfavorite')">{{ 'Retirer des favoris' | t }}</button>
       <button
         type="button"
         [attr.aria-expanded]="panel() === 'collection'"
         (click)="open('collection')"
       >
-        Collection
+        {{ 'Collection' | t }}
       </button>
       <details class="selection-more">
-        <summary>Autres actions</summary>
+        <summary>{{ 'Autres actions' | t }}</summary>
         <div class="row">
-          <button type="button" (click)="apply('review')">Marquer comme triés</button>
-          <button type="button" (click)="apply('inbox')">Remettre à trier</button>
-          <button type="button" (click)="apply('archive')">Archiver</button>
-          <button type="button" (click)="apply('restore')">Désarchiver</button>
-          <button type="button" (click)="apply('check')">Vérifier les liens</button>
+          <button type="button" (click)="apply('review')">{{ 'Marquer comme triés' | t }}</button>
+          <button type="button" (click)="apply('inbox')">{{ 'Remettre à trier' | t }}</button>
+          <button type="button" (click)="apply('archive')">{{ 'Archiver' | t }}</button>
+          <button type="button" (click)="apply('restore')">{{ 'Désarchiver' | t }}</button>
+          <button type="button" (click)="apply('check')">{{ 'Vérifier les liens' | t }}</button>
           <button type="button" class="danger" (click)="apply('delete')">
-            Supprimer la sélection
+            {{ 'Supprimer la sélection' | t }}
           </button>
         </div>
       </details>
     </div>
     @if (panel()) {
       <div class="selection-editor">
-        <label
-          >{{
-            panel() === 'tags'
+        <label>
+          {{
+            (panel() === 'tags'
               ? 'Étiquettes (séparées par des virgules)'
               : panel() === 'category'
                 ? 'Catégorie / sous-catégorie'
                 : 'Collection à ajouter'
+            ) | t
           }}
           <input
             type="text"
@@ -92,10 +96,10 @@
               [disabled]="!value().trim()"
               (click)="apply('tags')"
             >
-              Ajouter les étiquettes
+              {{ 'Ajouter les étiquettes' | t }}
             </button>
             <button type="button" [disabled]="!value().trim()" (click)="apply('removeTags')">
-              Retirer les étiquettes
+              {{ 'Retirer les étiquettes' | t }}
             </button>
           } @else if (panel() === 'category') {
             <button
@@ -104,9 +108,11 @@
               [disabled]="!value().trim()"
               (click)="apply('category')"
             >
-              Attribuer la catégorie
+              {{ 'Attribuer la catégorie' | t }}
             </button>
-            <button type="button" (click)="apply('clearCategory')">Retirer la catégorie</button>
+            <button type="button" (click)="apply('clearCategory')">
+              {{ 'Retirer la catégorie' | t }}
+            </button>
           } @else {
             <button
               type="button"
@@ -114,21 +120,21 @@
               [disabled]="!value().trim()"
               (click)="apply('collection')"
             >
-              Ajouter à la collection
+              {{ 'Ajouter à la collection' | t }}
             </button>
           }
-          <button type="button" class="ghost" (click)="panel.set('')">Fermer</button>
+          <button type="button" class="ghost" (click)="panel.set('')">{{ 'Fermer' | t }}</button>
         </div>
       </div>
     }
   }
 </fieldset>
 @if (busy()) {
-  <p role="status">Modification en cours…</p>
+  <p role="status">{{ 'Modification en cours…' | t }}</p>
 }
 @if (message()) {
-  <p role="status">{{ message() }}</p>
+  <p role="status">{{ message() | t }}</p>
 }
 @if (error()) {
-  <p class="error" role="alert">{{ error() }}</p>
+  <p class="error" role="alert">{{ error() | t }}</p>
 }

@@ -1,8 +1,8 @@
+import { I18nService, CategoryLabelPipe, TranslatePipe, LocalDatePipe } from '../core/i18n';
 import { FavoriteButton } from '../shared/favorite-button';
 import { LinkInsight } from '../shared/link-insight';
 import { libraryOf, LEARNING_STATES, RESOURCE_TYPES } from '../core/library';
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { LinkService } from '../core/link.service';
 import { LinkEvent } from '../core/models';
@@ -21,10 +21,19 @@ const EVENT_LABELS: Record<LinkEvent['type'], string> = {
 /** Fiche d'un lien : toutes ses informations. Le site lui-même s'ouvre depuis le bouton « Aller au site ». */
 @Component({
   selector: 'app-detail',
-  imports: [FavoriteButton, LinkInsight, DatePipe, RouterLink, FocusButton],
+  imports: [
+    CategoryLabelPipe,
+    TranslatePipe,
+    FavoriteButton,
+    LinkInsight,
+    LocalDatePipe,
+    RouterLink,
+    FocusButton,
+  ],
   templateUrl: './detail.html',
 })
 export class DetailPage {
+  protected readonly i18n = inject(I18nService);
   protected readonly svc = inject(LinkService);
   protected readonly lib = libraryOf;
   protected readonly states = LEARNING_STATES;
@@ -72,9 +81,10 @@ export class DetailPage {
     const l = this.link();
     const n = this.children().length;
     const extra = n
-      ? `\n\nLes ${n} lien(s) rattaché(s) à ce site restent enregistrés, sans site.`
+      ? '\n\n' +
+        this.i18n.t('Les {0} lien(s) rattaché(s) à ce site restent enregistrés, sans site.', [n])
       : '';
-    if (l && confirm(`Supprimer « ${l.title} » ?${extra}`)) {
+    if (l && confirm(this.i18n.t(`Supprimer « ${l.title} » ?${extra}`))) {
       await this.svc.remove(l.id);
       void this.router.navigate(['/table']);
     }

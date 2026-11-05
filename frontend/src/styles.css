@@ -157,6 +157,9 @@ app-selection-toolbar.has-selection { position: sticky; top: 5rem; z-index: 5; b
 .selection-more summary { cursor: pointer; padding: .4rem; }
 .selection-more[open] { flex-basis: 100%; }
 .selection-more .row { padding-top: .5rem; }
+.source-fields { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: .75rem; }
+.language-choice { margin: 0; }
+.language-choice select { width: auto; padding: .35rem .5rem; }
 @media (max-width: 40rem) {
   app-selection-toolbar.has-selection { position: static; }
   .grid { grid-template-columns: minmax(0, 1fr); }

@@ -1,13 +1,19 @@
 <main class="page">
   <section aria-labelledby="table-h">
-    <h2 id="table-h">Tous les liens</h2>
+    <h2 id="table-h">{{ 'Tous les liens' | t }}</h2>
     <div class="filters">
-      <select aria-label="Filtrer par catégorie" [value]="categoryFilter()" (change)="categoryOverride.set(val($event))">
-        <option value="">Toutes les catégories</option>
+      <select
+        [attr.aria-label]="'Filtrer par catégorie' | t"
+        [value]="categoryFilter()"
+        (change)="categoryOverride.set(val($event))"
+      >
+        <option value="">{{ 'Toutes les catégories' | t }}</option>
         @for (c of categories(); track c.category) {
-          <option [value]="c.category" [selected]="categoryFilter() === c.category">{{ c.category }} ({{ c.count }})</option>
+          <option [value]="c.category" [selected]="categoryFilter() === c.category">
+            {{ c.category | categoryLabel }} ({{ c.count }})
+          </option>
         }
-        <option value="_" [selected]="categoryFilter() === '_'">{{ uncategorized }}</option>
+        <option value="_" [selected]="categoryFilter() === '_'">{{ uncategorized | t }}</option>
       </select>
     </div>
     <app-links-table [links]="rows()" />

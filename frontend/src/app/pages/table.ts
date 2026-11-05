@@ -1,3 +1,4 @@
+import { CategoryLabelPipe, TranslatePipe } from '../core/i18n';
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { UNCATEGORIZED, categoryCounts } from '../core/catalog';
 import { LinkService } from '../core/link.service';
@@ -6,7 +7,7 @@ import { LinksTable } from '../shared/links-table';
 /** Tableau global : filtre par catégorie ; tri, recherche et actions sont dans le composant partagé. */
 @Component({
   selector: 'app-table',
-  imports: [LinksTable],
+  imports: [CategoryLabelPipe, TranslatePipe, LinksTable],
   templateUrl: './table.html',
 })
 export class TablePage {

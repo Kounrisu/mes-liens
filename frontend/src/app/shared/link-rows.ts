@@ -1,7 +1,8 @@
+import { TranslatePipe, LocalDatePipe } from '../core/i18n';
 import { FavoriteButton } from './favorite-button';
 import { SelectionToolbar, toggleSelection } from './selection-toolbar';
 import { Component, computed, inject, input, signal } from '@angular/core';
-import { DatePipe, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { LinkService } from '../core/link.service';
 import { filterLinks } from '../core/link-utils';
@@ -14,33 +15,42 @@ const NO_SOURCE = 'sans source';
 /** Vues compactes : liste d'une ligne par lien, ou regroupement par source (Udemy, YouTube…). */
 @Component({
   selector: 'app-link-rows',
-  imports: [FavoriteButton, SelectionToolbar, DatePipe, NgTemplateOutlet, RouterLink, FocusButton],
+  imports: [
+    TranslatePipe,
+    FavoriteButton,
+    SelectionToolbar,
+    LocalDatePipe,
+    NgTemplateOutlet,
+    RouterLink,
+    FocusButton,
+  ],
   template: `
     <div class="filters">
       <input
         type="search"
-        placeholder="Rechercher…"
-        aria-label="Rechercher"
+        [placeholder]="'Rechercher…' | t"
+        [attr.aria-label]="'Rechercher' | t"
         [value]="query()"
         (input)="setQuery(val($event))"
       />
     </div>
     <p class="meta" aria-live="polite">
-      {{ visible().length }} lien{{ visible().length > 1 ? 's' : '' }}
+      {{ '{0} lien{1}' | t: [visible().length, visible().length > 1 ? 's' : ''] }}
     </p>
 
     <app-selection-toolbar [links]="visible()" [shown]="shown()" [(selected)]="selected" />
     @if (!svc.ready()) {
-      <p>Chargement…</p>
+      <p>{{ 'Chargement…' | t }}</p>
     } @else if (visible().length === 0) {
-      <p class="empty">Aucun lien ne correspond.</p>
+      <p class="empty">{{ 'Aucun lien ne correspond.' | t }}</p>
     }
 
     @if (grouped()) {
       @for (g of groups(); track g.name) {
         <details class="group" open>
           <summary>
-            {{ g.name }} <small class="meta">{{ g.items.length }}</small>
+            {{ g.name === 'sans source' ? ('sans source' | t) : g.name }}
+            <small class="meta">{{ g.items.length }}</small>
           </summary>
           <ul class="rows">
             @for (l of g.items; track l.id) {
@@ -59,7 +69,7 @@ const NO_SOURCE = 'sans source';
     @if (visible().length > shown().length) {
       <p class="more">
         <button type="button" (click)="more()">
-          Afficher plus ({{ visible().length - shown().length }} restants)
+          {{ 'Afficher plus ({0} restants)' | t: [visible().length - shown().length] }}
         </button>
       </p>
     }
@@ -71,15 +81,15 @@ const NO_SOURCE = 'sans source';
           type="checkbox"
           [checked]="selected().has(l.id)"
           (change)="toggle(l.id)"
-          [attr.aria-label]="'Sélectionner ' + l.title"
+          [attr.aria-label]="'Sélectionner ' + l.title | t"
         />
         <a class="t" [href]="l.url" target="_blank" rel="noopener noreferrer">{{ l.title }}</a>
         @if (l.kind === 'site') {
-          <span class="badge">site</span>
+          <span class="badge"> {{ 'site' | t }} </span>
         }
         <span class="meta"
           >{{ grouped() ? l.domain : l.source || l.domain }} ·
-          {{ l.createdAt | date: 'dd/MM/yyyy' }}</span
+          {{ l.createdAt | localDate: 'dd/MM/yyyy' }}</span
         >
         @for (t of l.tags; track t) {
           <span class="badge">{{ t }}</span>
@@ -88,9 +98,10 @@ const NO_SOURCE = 'sans source';
         <a
           class="btn small"
           [routerLink]="['/link', l.id]"
-          [attr.aria-label]="'Ouvrir la fiche de ' + l.title"
-          >Ouvrir</a
+          [attr.aria-label]="'Ouvrir la fiche de ' + l.title | t"
         >
+          {{ 'Ouvrir' | t }}
+        </a>
         <app-favorite-button [link]="l" /><app-focus-button [link]="l" />
       </li>
     </ng-template>

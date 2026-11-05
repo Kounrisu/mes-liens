@@ -1,50 +1,54 @@
 <main class="page">
   @if (!svc.ready()) {
-    <p>Chargement…</p>
+    <p>{{ 'Chargement…' | t }}</p>
   } @else if (link(); as l) {
     <article class="card detail" aria-labelledby="detail-h">
       <div class="row">
         <h2 id="detail-h">{{ l.title }}</h2>
         <span class="spacer" style="flex: 1"></span>
-        <a class="btn small primary-link" [href]="l.url" target="_blank" rel="noopener noreferrer"
-          >Aller au site ↗</a
-        >
+        <a class="btn small primary-link" [href]="l.url" target="_blank" rel="noopener noreferrer">
+          {{ 'Aller au site ↗' | t }}
+        </a>
         <app-favorite-button [link]="l" /><app-focus-button [link]="l" />
-        <a class="btn small" [routerLink]="['/link', l.id, 'edit']">Modifier</a>
-        <button type="button" class="ghost danger small" (click)="remove()">Supprimer</button>
+        <a class="btn small" [routerLink]="['/link', l.id, 'edit']"> {{ 'Modifier' | t }} </a>
+        <button type="button" class="ghost danger small" (click)="remove()">
+          {{ 'Supprimer' | t }}
+        </button>
       </div>
 
       @if (shot(); as src) {
-        <img class="detail-shot" [src]="src" alt="Capture d'écran de {{ l.title }}" />
+        <img class="detail-shot" [src]="src" alt="" [alt]="'Capture de {0}' | t: [l.title]" />
       }
 
       <dl class="facts">
-        <dt>Type</dt>
-        <dd>{{ l.kind === 'site' ? 'Site / plateforme' : 'Lien' }}</dd>
+        <dt>{{ 'Type' | t }}</dt>
+        <dd>{{ (l.kind === 'site' ? 'Site / plateforme' : 'Lien') | t }}</dd>
         @if (site(); as s) {
-          <dt>Site</dt>
+          <dt>{{ 'Site' | t }}</dt>
           <dd>
             <a [routerLink]="['/link', s.id]">{{ s.title }}</a>
             <span class="meta">({{ s.domain }})</span>
           </dd>
         }
-        <dt>Adresse</dt>
+        <dt>{{ 'Adresse' | t }}</dt>
         <dd>
           <a [href]="l.url" target="_blank" rel="noopener noreferrer">{{ l.url }}</a>
         </dd>
-        <dt>Source</dt>
+        <dt>{{ 'Source' | t }}</dt>
         <dd>
           {{ l.source || '—' }} <span class="meta">({{ l.domain }})</span>
         </dd>
-        <dt>Catégorie</dt>
+        <dt>{{ 'Catégorie' | t }}</dt>
         <dd>
           @if (l.category) {
-            <a class="badge cat" [routerLink]="['/category', l.category]">{{ l.category }}</a>
+            <a class="badge cat" [routerLink]="['/category', l.category]">{{
+              l.category | categoryLabel
+            }}</a>
           } @else {
             —
           }
         </dd>
-        <dt>Étiquettes</dt>
+        <dt>{{ 'Étiquettes' | t }}</dt>
         <dd>
           @for (t of l.tags; track t) {
             <span class="badge">{{ t }}</span> {{ ' ' }}
@@ -52,96 +56,108 @@
             —
           }
         </dd>
-        <dt>Note</dt>
+        <dt>{{ 'Note' | t }}</dt>
         <dd class="note">{{ l.note || '—' }}</dd>
-        <dt>Créé</dt>
-        <dd>{{ l.createdAt | date: 'dd/MM/yyyy HH:mm' }}</dd>
-        <dt>Modifié</dt>
-        <dd>{{ l.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</dd>
+        <dt>{{ 'Créé' | t }}</dt>
+        <dd>{{ l.createdAt | localDate: 'dd/MM/yyyy HH:mm' }}</dd>
+        <dt>{{ 'Modifié' | t }}</dt>
+        <dd>{{ l.updatedAt | localDate: 'dd/MM/yyyy HH:mm' }}</dd>
       </dl>
 
       @if (l.kind === 'site') {
         <section aria-labelledby="children-h">
           <div class="row">
             <h3 id="children-h">
-              Liens de ce site <span class="meta">· {{ children().length }}</span>
+              {{ 'Liens de ce site' | t }} <span class="meta">· {{ children().length }}</span>
             </h3>
             <span class="spacer" style="flex: 1"></span>
-            <a class="btn small" [routerLink]="['/']" [queryParams]="{ site: l.id }"
-              >+ Ajouter un lien à ce site</a
-            >
+            <a class="btn small" [routerLink]="['/']" [queryParams]="{ site: l.id }">
+              {{ '+ Ajouter un lien à ce site' | t }}
+            </a>
           </div>
           <ul class="mini">
             @for (c of children(); track c.id) {
               <li>
                 <a [routerLink]="['/link', c.id]">{{ c.title }}</a>
                 @if (c.category) {
-                  <span class="badge cat">{{ c.category }}</span>
+                  <span class="badge cat">{{ c.category | categoryLabel }}</span>
                 }
               </li>
             } @empty {
-              <li class="empty">Aucun lien rattaché pour l'instant.</li>
+              <li class="empty">{{ "Aucun lien rattaché pour l'instant." | t }}</li>
             }
           </ul>
         </section>
       }
 
       <section class="card">
-        <h3>Mon apprentissage</h3>
+        <h3>{{ 'Mon apprentissage' | t }}</h3>
         <p>
-          {{ types[lib(l).resourceType] }} · {{ states[lib(l).learningStatus] }}
+          {{ types[lib(l).resourceType] | t }} · {{ states[lib(l).learningStatus] | t }}
           @if (lib(l).archived) {
-            · Archivé
+            {{ '· Archivé' | t }}
           }
         </p>
         @if (lib(l).collections.length) {
-          <p>Collections : {{ lib(l).collections.join(' · ') }}</p>
+          <p>{{ 'Collections : {0}' | t: [lib(l).collections.join(' · ')] }}</p>
         }
         @if (lib(l).objective) {
-          <p class="note"><strong>Objectif :</strong> {{ lib(l).objective }}</p>
+          <p class="note">
+            <strong> {{ 'Objectif :' | t }} </strong> {{ lib(l).objective }}
+          </p>
         }
         @if (lib(l).resumeAt) {
-          <p><strong>Reprendre à :</strong> {{ lib(l).resumeAt }}</p>
+          <p>
+            <strong> {{ 'Reprendre à :' | t }} </strong> {{ lib(l).resumeAt }}
+          </p>
         }
         @if (lib(l).nextAction) {
-          <p><strong>Prochaine action :</strong> {{ lib(l).nextAction }}</p>
+          <p>
+            <strong> {{ 'Prochaine action :' | t }} </strong> {{ lib(l).nextAction }}
+          </p>
         }
         @if (lib(l).learned) {
-          <h3>Ce que j'ai appris</h3>
+          <h3>{{ "Ce que j'ai appris" | t }}</h3>
           <p class="note">{{ lib(l).learned }}</p>
         }
         @if (lib(l).applyTo) {
-          <h3>Application</h3>
+          <h3>{{ 'Application' | t }}</h3>
           <p class="note">{{ lib(l).applyTo }}</p>
         }
         @if (lib(l).reviewOn) {
-          <p>À revoir le {{ lib(l).reviewOn }}</p>
+          <p>{{ 'À revoir le {0}' | t: [lib(l).reviewOn] }}</p>
         }
-        <a class="btn" [routerLink]="['/link', l.id, 'edit']">Mettre à jour ma progression</a>
+        <a class="btn" [routerLink]="['/link', l.id, 'edit']">
+          {{ 'Mettre à jour ma progression' | t }}
+        </a>
       </section>
       <section class="card">
-        <h3>Aperçu et disponibilité</h3>
+        <h3>{{ 'Aperçu et disponibilité' | t }}</h3>
         <app-link-insight [link]="l" [detail]="true" />
       </section>
-      <h3>Historique</h3>
+      <h3>{{ 'Historique' | t }}</h3>
       <ol class="history">
         @for (e of events(); track e.id) {
           <li>
-            <span class="meta">{{ e.at | date: 'dd/MM/yyyy HH:mm' }}</span> {{ label(e) }}
+            <span class="meta">{{ e.at | localDate: 'dd/MM/yyyy HH:mm' }}</span> {{ label(e) | t }}
             @if (detail(e)) {
               : <span class="badge">{{ detail(e) }}</span>
             }
           </li>
         } @empty {
-          <li class="empty">Aucun événement.</li>
+          <li class="empty">{{ 'Aucun événement.' | t }}</li>
         }
       </ol>
     </article>
-    <p><a [routerLink]="['/table']">← Retour au tableau</a></p>
+    <p>
+      <a [routerLink]="['/table']"> {{ '← Retour au tableau' | t }} </a>
+    </p>
   } @else {
     <p class="empty">
-      Lien introuvable : il a peut-être été supprimé (ici ou sur un autre appareil).
+      {{ 'Lien introuvable : il a peut-être été supprimé (ici ou sur un autre appareil).' | t }}
     </p>
-    <p><a [routerLink]="['/table']">← Retour au tableau</a></p>
+    <p>
+      <a [routerLink]="['/table']"> {{ '← Retour au tableau' | t }} </a>
+    </p>
   }
 </main>

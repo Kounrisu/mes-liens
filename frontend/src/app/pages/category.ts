@@ -1,3 +1,4 @@
+import { CategoryLabelPipe, TranslatePipe } from '../core/i18n';
 import { Component, computed, inject, input } from '@angular/core';
 import { UNCATEGORIZED } from '../core/catalog';
 import { LinkService } from '../core/link.service';
@@ -7,13 +8,15 @@ import { categoryWithin, libraryOf } from '../core/library';
 /** Une page par catégorie. `_` désigne les liens sans catégorie. */
 @Component({
   selector: 'app-category',
-  imports: [LinkViews],
+  imports: [CategoryLabelPipe, TranslatePipe, LinkViews],
   template: `
     <main class="page">
       <section aria-labelledby="cat-h">
         <h2 id="cat-h">
-          {{ label() }}
-          <small class="meta">· {{ links().length }} lien{{ links().length > 1 ? 's' : '' }}</small>
+          {{ label() | categoryLabel }}
+          <small class="meta">
+            {{ '· {0} lien{1}' | t: [links().length, links().length > 1 ? 's' : ''] }}
+          </small>
         </h2>
         <app-link-views [links]="links()" />
       </section>

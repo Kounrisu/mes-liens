@@ -1,3 +1,4 @@
+import { I18nService, CategoryLabelPipe, TranslatePipe } from '../core/i18n';
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { LinkService } from '../core/link.service';
@@ -15,18 +16,20 @@ import { InsightsService } from '../core/insights.service';
 
 @Component({
   selector: 'app-library',
-  imports: [LinksTable, LinkList, RouterLink],
+  imports: [CategoryLabelPipe, TranslatePipe, LinksTable, LinkList, RouterLink],
   template: ` <main class="page">
     <section class="library-heading">
       <div>
-        <h2>Ma bibliothèque</h2>
+        <h2>{{ 'Ma bibliothèque' | t }}</h2>
         <p class="meta">
-          Classer mes découvertes, avancer dans mes formations, retrouver mes connaissances.
+          {{
+            'Classer mes découvertes, avancer dans mes formations, retrouver mes connaissances.' | t
+          }}
         </p>
       </div>
-      <a class="btn" routerLink="/">Enregistrer un lien</a>
+      <a class="btn" routerLink="/"> {{ 'Enregistrer un lien' | t }} </a>
     </section>
-    <nav class="library-tabs" aria-label="Vues de la bibliothèque">
+    <nav class="library-tabs" [attr.aria-label]="'Vues de la bibliothèque' | t">
       @for (v of views; track v.id) {
         <button
           type="button"
@@ -34,57 +37,61 @@ import { InsightsService } from '../core/insights.service';
           [attr.aria-pressed]="view() === v.id"
           (click)="view.set(v.id)"
         >
-          {{ v.label }} <small>{{ count(v.id) }}</small>
+          {{ v.label | t }} <small>{{ count(v.id) }}</small>
         </button>
       }
     </nav>
     <section class="card">
       <div class="cols">
-        <label
-          >Catégorie et sous-catégories<select
-            [value]="category()"
-            (change)="category.set(text($event))"
-          >
-            <option value="">Toutes les catégories</option>
+        <label>
+          {{ 'Catégorie et sous-catégories' | t }}
+          <select [value]="category()" (change)="category.set(text($event))">
+            <option value="">{{ 'Toutes les catégories' | t }}</option>
             @for (c of categories(); track c) {
-              <option [value]="c">{{ c }}</option>
+              <option [value]="c">{{ c | categoryLabel }}</option>
             }
           </select></label
         >
-        <label
-          >Collection<select [value]="collection()" (change)="collection.set(text($event))">
-            <option value="">Toutes les collections</option>
+        <label>
+          {{ 'Collection' | t }}
+          <select [value]="collection()" (change)="collection.set(text($event))">
+            <option value="">{{ 'Toutes les collections' | t }}</option>
             @for (c of collections(); track c) {
               <option [value]="c">{{ c }}</option>
             }
           </select></label
         >
-        <label
-          >Progression<select [value]="status()" (change)="status.set(text($event))">
-            <option value="">Toutes les progressions</option>
+        <label>
+          {{ 'Progression' | t }}
+          <select [value]="status()" (change)="status.set(text($event))">
+            <option value="">{{ 'Toutes les progressions' | t }}</option>
             @for (s of states; track s.key) {
-              <option [value]="s.key">{{ s.label }}</option>
+              <option [value]="s.key">{{ s.label | t }}</option>
             }
           </select></label
         >
       </div>
       <div class="row view-choice">
         <button type="button" [attr.aria-pressed]="!cards()" (click)="cards.set(false)">
-          Tableau et classement en lot</button
+          {{ 'Tableau et classement en lot' | t }}</button
         ><button type="button" [attr.aria-pressed]="cards()" (click)="cards.set(true)">
-          Aperçus visuels
+          {{ 'Aperçus visuels' | t }}
         </button>
       </div>
       @if (view() === 'inbox') {
         <p class="meta">
-          Une catégorie suggérée ne signifie pas que le lien a été trié. Vérifie le classement, puis
-          marque-le comme trié.
+          {{
+            'Une catégorie suggérée ne signifie pas que le lien a été trié. Vérifie le classement, puis marque-le comme trié.'
+              | t
+          }}
         </p>
       }
       @if (view() === 'duplicates') {
         <p class="meta">
-          Adresses identiques, hors paramètres de suivi courants. Rien n'est fusionné ni supprimé
-          automatiquement.
+          {{
+            "Adresses identiques, hors paramètres de suivi courants. Rien n'est fusionné ni supprimé automatiquement."
+              | t
+          }}
         </p>
       }
       @if (cards()) {
@@ -94,8 +101,8 @@ import { InsightsService } from '../core/insights.service';
       }
     </section>
     @if (view() === 'knowledge') {
-      <section aria-label="Mes notes de connaissances">
-        <h2>Ce que je retiens</h2>
+      <section [attr.aria-label]="'Mes notes de connaissances' | t">
+        <h2>{{ 'Ce que je retiens' | t }}</h2>
         <div class="knowledge-grid">
           @for (l of filtered(); track l.id) {
             <article class="card">
@@ -104,7 +111,9 @@ import { InsightsService } from '../core/insights.service';
               </h3>
               <p class="note">{{ lib(l).learned }}</p>
               @if (lib(l).applyTo) {
-                <p class="note"><strong>Application :</strong> {{ lib(l).applyTo }}</p>
+                <p class="note">
+                  <strong> {{ 'Application :' | t }} </strong> {{ lib(l).applyTo }}
+                </p>
               }
               <p class="meta">{{ lib(l).collections.join(' · ') }}</p>
             </article>
@@ -113,51 +122,49 @@ import { InsightsService } from '../core/insights.service';
       </section>
     }
     <details class="card">
-      <summary>Gérer les catégories et étiquettes</summary>
+      <summary>{{ 'Gérer les catégories et étiquettes' | t }}</summary>
       <p>
-        Renomme ou fusionne un nom dans toute la bibliothèque. Les sous-catégories suivent leur
-        parent.
+        {{
+          'Renomme ou fusionne un nom dans toute la bibliothèque. Les sous-catégories suivent leur parent.'
+            | t
+        }}
       </p>
       <form (submit)="rename($event)">
         <div class="cols">
-          <label
-            >À modifier<select
+          <label>
+            {{ 'À modifier' | t }}
+            <select
               [value]="renameKind()"
               (change)="
                 renameKind.set(text($event) === 'tag' ? 'tag' : 'category'); renameFrom.set('')
               "
             >
-              <option value="category">Catégorie</option>
-              <option value="tag">Étiquette</option>
+              <option value="category">{{ 'Catégorie' | t }}</option>
+              <option value="tag">{{ 'Étiquette' | t }}</option>
             </select></label
           >
-          <label
-            >Nom actuel<select
-              required
-              [value]="renameFrom()"
-              (change)="renameFrom.set(text($event))"
-            >
-              <option value="">Choisir…</option>
+          <label>
+            {{ 'Nom actuel' | t }}
+            <select required [value]="renameFrom()" (change)="renameFrom.set(text($event))">
+              <option value="">{{ 'Choisir…' | t }}</option>
               @for (n of renameNames(); track n) {
                 <option [value]="n">{{ n }}</option>
               }
             </select></label
           >
-          <label
-            >Nouveau nom ou nom existant<input
-              type="text"
-              required
-              [value]="renameTo()"
-              (input)="renameTo.set(text($event))"
+          <label>
+            {{ 'Nouveau nom ou nom existant' | t }}
+            <input type="text" required [value]="renameTo()" (input)="renameTo.set(text($event))"
           /></label>
         </div>
-        <button class="primary" [disabled]="busy()">Renommer / fusionner</button>
-        <p role="status">{{ message() }}</p>
+        <button class="primary" [disabled]="busy()">{{ 'Renommer / fusionner' | t }}</button>
+        <p role="status">{{ message() | t }}</p>
       </form>
     </details>
   </main>`,
 })
 export class LibraryPage {
+  protected readonly i18n = inject(I18nService);
   readonly svc = inject(LinkService);
   readonly insights = inject(InsightsService);
   readonly lib = libraryOf;
@@ -239,7 +246,7 @@ export class LibraryPage {
   }
   async rename(e: Event) {
     e.preventDefault();
-    if (!confirm('Renommer / fusionner ce nom dans toute la bibliothèque ?')) return;
+    if (!confirm(this.i18n.t('Renommer / fusionner ce nom dans toute la bibliothèque ?'))) return;
     this.busy.set(true);
     try {
       const n = await this.svc.renameClassification(

@@ -1,84 +1,85 @@
+import { TranslatePipe } from '../core/i18n';
 import { Component, input, output } from '@angular/core';
 import { LibraryData, LEARNING_STATES, RESOURCE_TYPES } from '../core/library';
 
 @Component({
+  imports: [TranslatePipe],
   selector: 'app-library-editor',
   template: `
     <details class="learning-fields" [open]="expanded()">
-      <summary>Organisation et apprentissage</summary>
+      <summary>{{ 'Organisation et apprentissage' | t }}</summary>
       <div class="cols">
-        <label
-          >Type de ressource<select
-            [value]="value().resourceType"
-            (change)="set('resourceType', text($event))"
-          >
+        <label>
+          {{ 'Type de ressource' | t }}
+          <select [value]="value().resourceType" (change)="set('resourceType', text($event))">
             @for (s of types; track s.key) {
-              <option [value]="s.key">{{ s.label }}</option>
+              <option [value]="s.key">{{ s.label | t }}</option>
             }
           </select></label
         >
-        <label
-          >Progression<select
-            [value]="value().learningStatus"
-            (change)="set('learningStatus', text($event))"
-          >
+        <label>
+          {{ 'Progression' | t }}
+          <select [value]="value().learningStatus" (change)="set('learningStatus', text($event))">
             @for (s of states; track s.key) {
-              <option [value]="s.key">{{ s.label }}</option>
+              <option [value]="s.key">{{ s.label | t }}</option>
             }
           </select></label
         >
-        <label
-          >Collections <small>Séparées par des virgules</small
+        <label>
+          {{ 'Collections' | t }} <small> {{ 'Séparées par des virgules' | t }} </small
           ><input
             type="text"
             [value]="value().collections.join(', ')"
             (input)="collections(text($event))"
-            placeholder="Angular au quotidien, Projet personnel"
+            [placeholder]="'Angular au quotidien, Projet personnel' | t"
         /></label>
-        <label
-          >À revoir le<input
-            type="date"
-            [value]="value().reviewOn"
-            (input)="set('reviewOn', text($event))"
+        <label>
+          {{ 'À revoir le' | t }}
+          <input type="date" [value]="value().reviewOn" (input)="set('reviewOn', text($event))"
         /></label>
       </div>
-      <label
-        >Mon objectif<input
+      <label>
+        {{ 'Mon objectif' | t }}
+        <input
           type="text"
           maxlength="10000"
           [value]="value().objective"
           (input)="set('objective', text($event))"
-          placeholder="Ce que je veux savoir faire"
+          [placeholder]="'Ce que je veux savoir faire' | t"
       /></label>
       <div class="cols">
-        <label
-          >Reprendre à<input
+        <label>
+          {{ 'Reprendre à' | t }}
+          <input
             type="text"
             maxlength="10000"
             [value]="value().resumeAt"
             (input)="set('resumeAt', text($event))"
-            placeholder="Chapitre 4, vidéo à 12:30…"
+            [placeholder]="'Chapitre 4, vidéo à 12:30…' | t"
         /></label>
-        <label
-          >Prochaine action<input
+        <label>
+          {{ 'Prochaine action' | t }}
+          <input
             type="text"
             maxlength="10000"
             [value]="value().nextAction"
             (input)="set('nextAction', text($event))"
-            placeholder="Faire l'exercice sur les signals"
+            [placeholder]="'Faire l\\'exercice sur les signals' | t"
         /></label>
       </div>
-      <label
-        >Ce que j'ai appris<textarea
+      <label>
+        {{ "Ce que j'ai appris" | t }}
+        <textarea
           rows="4"
           maxlength="10000"
           [value]="value().learned"
           (input)="set('learned', text($event))"
-          placeholder="Une explication avec mes propres mots…"
+          [placeholder]="'Une explication avec mes propres mots…' | t"
         ></textarea>
       </label>
-      <label
-        >Où je peux l'appliquer<textarea
+      <label>
+        {{ "Où je peux l'appliquer" | t }}
+        <textarea
           rows="2"
           maxlength="10000"
           [value]="value().applyTo"
@@ -92,16 +93,16 @@ import { LibraryData, LEARNING_STATES, RESOURCE_TYPES } from '../core/library';
             [checked]="value().reviewed"
             (change)="flag('reviewed', $event)"
           />
-          Classement vérifié (retirer de À trier)</label
-        >
+          {{ 'Classement vérifié (retirer de À trier)' | t }}
+        </label>
         <label class="check"
           ><input
             type="checkbox"
             [checked]="value().archived"
             (change)="flag('archived', $event)"
           />
-          Archiver</label
-        >
+          {{ 'Archiver' | t }}
+        </label>
       </div>
     </details>
   `,

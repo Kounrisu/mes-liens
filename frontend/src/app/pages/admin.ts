@@ -1,5 +1,5 @@
+import { I18nService, TranslatePipe, LocalDatePipe } from '../core/i18n';
 import { Component, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { buildBookmarklet, shortcutBase } from '../core/bookmarklet';
 import { ImportError } from '../core/backup';
@@ -12,108 +12,131 @@ import { ZipImportPlan } from '../core/zip-backup';
 /** Administration : exports (favoris HTML, archive ZIP pour l'IA), import d'une archive ZIP mise à jour, et réglages techniques. */
 @Component({
   selector: 'app-admin',
-  imports: [DatePipe],
+  imports: [TranslatePipe, LocalDatePipe],
   template: `
     <main class="page">
-      <h2>Administration</h2>
+      <h2>{{ 'Administration' | t }}</h2>
 
       <section class="card" aria-labelledby="adm-html">
-        <h3 id="adm-html">Exporter mes favoris (HTML)</h3>
+        <h3 id="adm-html">{{ 'Exporter mes favoris (HTML)' | t }}</h3>
         <p class="meta">
-          Un fichier de favoris que Chrome, Edge, Firefox et Safari savent importer. Un dossier par
-          catégorie, avec les étiquettes et les notes.
+          {{
+            'Un fichier de favoris que Chrome, Edge, Firefox et Safari savent importer. Un dossier par catégorie, avec les étiquettes et les notes.'
+              | t
+          }}
         </p>
         <button type="button" class="primary" (click)="exportHtml()">
-          Télécharger les favoris (.html)
+          {{ 'Télécharger les favoris (.html)' | t }}
         </button>
       </section>
 
       <section class="card" aria-labelledby="adm-zip">
-        <h3 id="adm-zip">Exporter une archive pour l'IA (ZIP avec images)</h3>
+        <h3 id="adm-zip">{{ "Exporter une archive pour l'IA (ZIP avec images)" | t }}</h3>
         <p class="meta">
-          Contient <code>links.json</code> (tous les liens, modifiables), les captures d'écran et un
-          <code>LISEZ-MOI.md</code> qui explique les règles à l'IA. Donne le ZIP à une IA,
-          demande-lui de le modifier, puis réimporte-le ci-dessous.
+          {{ 'Contient' | t }} <code>links.json</code>
+          {{ "(tous les liens, modifiables), les captures d'écran et un" | t }}
+          <code>LISEZ-MOI.md</code>
+          {{
+            "qui explique les règles à l'IA. Donne le ZIP à une IA, demande-lui de le modifier, puis réimporte-le ci-dessous."
+              | t
+          }}
         </p>
         <button type="button" class="primary" [disabled]="busy()" (click)="exportZip()">
-          Télécharger l'archive (.zip)
+          {{ "Télécharger l'archive (.zip)" | t }}
         </button>
       </section>
 
       <section class="card" aria-labelledby="adm-imp">
-        <h3 id="adm-imp">Importer une archive ZIP mise à jour</h3>
+        <h3 id="adm-imp">{{ 'Importer une archive ZIP mise à jour' | t }}</h3>
         <p class="meta">
-          Le fichier est d'abord <strong>analysé</strong> : tu vois ce qui sera créé, modifié ou
-          supprimé avant que quoi que ce soit soit écrit. Une seule erreur dans l'archive annule
-          tout l'import.
+          {{ "Le fichier est d'abord" | t }} <strong> {{ 'analysé' | t }} </strong>
+          {{
+            ": tu vois ce qui sera créé, modifié ou supprimé avant que quoi que ce soit soit écrit. Une seule erreur dans l'archive annule tout l'import."
+              | t
+          }}
         </p>
-        <label class="ghost btn"
-          >Choisir un fichier ZIP…
+        <label class="ghost btn">
+          {{ 'Choisir un fichier ZIP…' | t }}
           <input type="file" accept=".zip,application/zip" hidden (change)="pick($event)" />
         </label>
         @if (analysing()) {
-          <p class="meta" role="status">Analyse en cours…</p>
+          <p class="meta" role="status">{{ 'Analyse en cours…' | t }}</p>
         }
         @if (importError()) {
-          <p class="error" role="alert">{{ importError() }}</p>
+          <p class="error" role="alert">{{ importError() | t }}</p>
         }
 
         @if (plan(); as p) {
-          <div class="plan" role="region" aria-label="Résumé de l'import">
+          <div class="plan" role="region" [attr.aria-label]="'Résumé de l\\'import' | t">
             <p>
               <strong>{{ fileName() }}</strong>
             </p>
             @if (p.warnings.length) {
               <aside class="notice">
-                <strong>{{ p.warnings.length }} doublon(s) possible(s)</strong>
+                <strong> {{ '{0} doublon(s) possible(s)' | t: [p.warnings.length] }} </strong>
                 <ul>
                   @for (w of p.warnings.slice(0, 10); track $index) {
-                    <li>{{ w }}</li>
+                    <li>{{ w | t }}</li>
                   }
                 </ul>
               </aside>
             }
             @if (!p.errors.length) {
               <ul>
-                <li>{{ p.created.length }} lien{{ p.created.length > 1 ? 's' : '' }} à créer</li>
-                <li>{{ p.updated.length }} lien{{ p.updated.length > 1 ? 's' : '' }} à modifier</li>
                 <li>
-                  {{ p.deleted.length }} lien{{ p.deleted.length > 1 ? 's' : '' }} à supprimer
-                  (marqués <code>deleted</code>)
+                  {{
+                    '{0} lien{1} à créer' | t: [p.created.length, p.created.length > 1 ? 's' : '']
+                  }}
                 </li>
-                <li>{{ p.unchanged }} inchangé{{ p.unchanged > 1 ? 's' : '' }}</li>
+                <li>
+                  {{
+                    '{0} lien{1} à modifier'
+                      | t: [p.updated.length, p.updated.length > 1 ? 's' : '']
+                  }}
+                </li>
+                <li>
+                  {{
+                    '{0} lien{1} à supprimer (marqués'
+                      | t: [p.deleted.length, p.deleted.length > 1 ? 's' : '']
+                  }}
+                  <code>deleted</code>)
+                </li>
+                <li>{{ '{0} inchangé{1}' | t: [p.unchanged, p.unchanged > 1 ? 's' : ''] }}</li>
               </ul>
             }
             @if (p.errors.length) {
               <p class="error" role="alert">
-                {{ p.errors.length }} erreur{{ p.errors.length > 1 ? 's' : '' }} : l'import est
-                impossible tant que l'archive n'est pas corrigée.
+                {{
+                  "{0} erreur{1} : l'import est impossible tant que l'archive n'est pas corrigée."
+                    | t: [p.errors.length, p.errors.length > 1 ? 's' : '']
+                }}
               </p>
               <ul class="errors">
                 @for (e of p.errors.slice(0, 20); track $index) {
-                  <li>{{ e }}</li>
+                  <li>{{ e | t }}</li>
                 }
               </ul>
               @if (p.errors.length > 20) {
-                <p class="meta">… et {{ p.errors.length - 20 }} autres.</p>
+                <p class="meta">{{ '… et {0} autres.' | t: [p.errors.length - 20] }}</p>
               }
             } @else {
               @if (changed().length) {
                 <details>
                   <summary>
-                    Détail des {{ changed().length }} changement{{
-                      changed().length > 1 ? 's' : ''
+                    {{
+                      'Détail des {0} changement{1}'
+                        | t: [changed().length, changed().length > 1 ? 's' : '']
                     }}
                   </summary>
                   <ul class="changes">
                     @for (c of changed().slice(0, 100); track c.link.id) {
                       <li>
-                        <strong>{{ c.link.title }}</strong> — {{ c.fields.join(', ') }}
+                        <strong>{{ c.link.title }}</strong> — {{ translatedFields(c.fields) }}
                       </li>
                     }
                   </ul>
                   @if (changed().length > 100) {
-                    <p class="meta">… et {{ changed().length - 100 }} autres.</p>
+                    <p class="meta">{{ '… et {0} autres.' | t: [changed().length - 100] }}</p>
                   }
                 </details>
               }
@@ -124,11 +147,16 @@ import { ZipImportPlan } from '../core/zip-backup';
                     [checked]="deleteMissing()"
                     (change)="deleteMissing.set(!deleteMissing())"
                   />
-                  Supprimer aussi les {{ p.missing.length }} lien{{
-                    p.missing.length > 1 ? 's' : ''
+                  {{
+                    "Supprimer aussi les {0} lien{1} absent{2} de l'archive"
+                      | t
+                        : [
+                            p.missing.length,
+                            p.missing.length > 1 ? 's' : '',
+                            p.missing.length > 1 ? 's' : '',
+                          ]
                   }}
-                  absent{{ p.missing.length > 1 ? 's' : '' }} de l'archive
-                  <small class="meta">(sinon ils sont conservés)</small>
+                  <small class="meta"> {{ '(sinon ils sont conservés)' | t }} </small>
                 </label>
               }
               <div class="row">
@@ -138,26 +166,31 @@ import { ZipImportPlan } from '../core/zip-backup';
                   [disabled]="busy() || nothingToDo()"
                   (click)="apply()"
                 >
-                  Appliquer l'import
+                  {{ "Appliquer l'import" | t }}
                 </button>
-                <button type="button" class="ghost" (click)="cancel()">Annuler</button>
+                <button type="button" class="ghost" (click)="cancel()">{{ 'Annuler' | t }}</button>
               </div>
               @if (nothingToDo()) {
-                <p class="meta">Rien à changer : l'archive est identique à tes liens actuels.</p>
+                <p class="meta">
+                  {{ "Rien à changer : l'archive est identique à tes liens actuels." | t }}
+                </p>
               }
             }
           </div>
         }
         @if (done()) {
-          <p class="meta" role="status">{{ done() }}</p>
+          <p class="meta" role="status">{{ done() | t }}</p>
         }
       </section>
 
       <section class="card" aria-labelledby="adm-add">
-        <h3 id="adm-add">Ajouter un lien depuis un autre site</h3>
+        <h3 id="adm-add">{{ 'Ajouter un lien depuis un autre site' | t }}</h3>
         <p class="meta">
-          <strong>Sur ordinateur :</strong> glisse ce bouton dans ta barre de favoris. Sur n'importe
-          quelle page, clique dessus : mes-liens s'ouvre avec l'adresse et le titre déjà remplis.
+          <strong> {{ 'Sur ordinateur :' | t }} </strong>
+          {{
+            "glisse ce bouton dans ta barre de favoris. Sur n'importe quelle page, clique dessus : mes-liens s'ouvre avec l'adresse et le titre déjà remplis."
+              | t
+          }}
         </p>
         <div class="row">
           <a
@@ -165,52 +198,64 @@ import { ZipImportPlan } from '../core/zip-backup';
             [href]="bookmarkletHref"
             (click)="$event.preventDefault()"
             draggable="true"
-            >+ mes-liens</a
           >
-          <button type="button" (click)="copyBookmarklet()">Copier le code du favori</button>
+            {{ '+ mes-liens' | t }}
+          </a>
+          <button type="button" (click)="copyBookmarklet()">
+            {{ 'Copier le code du favori' | t }}
+          </button>
         </div>
         <p class="meta">
-          Certains sites très stricts bloquent ce type de favori ; dans ce cas, copie l'adresse et
-          colle-la dans le formulaire de l'accueil.
+          {{
+            "Certains sites très stricts bloquent ce type de favori ; dans ce cas, copie l'adresse et colle-la dans le formulaire de l'accueil."
+              | t
+          }}
         </p>
         <p class="meta">
-          <strong>Sur iPhone / iPad :</strong> iOS n'envoie pas les pages vers une application
-          installée. Il faut un <em>Raccourci</em> (non testé sur iOS, les noms exacts des actions
-          peuvent varier) :
+          <strong> {{ 'Sur iPhone / iPad :' | t }} </strong>
+          {{ "iOS n'envoie pas les pages vers une application installée. Il faut un" | t }}
+          <em> {{ 'Raccourci' | t }} </em>
+          {{ '(non testé sur iOS, les noms exacts des actions peuvent varier) :' | t }}
         </p>
         <ol class="meta">
           <li>
-            App Raccourcis → « + » → nomme-le « Ajouter à mes-liens ». Dans ses réglages, active «
-            Afficher dans la feuille de partage » et limite-le aux <em>URL</em> / pages Safari.
+            {{
+              'App Raccourcis → « + » → nomme-le « Ajouter à mes-liens ». Dans ses réglages, active « Afficher dans la feuille de partage » et limite-le aux'
+                | t
+            }}
+            <em>URL</em> {{ '/ pages Safari.' | t }}
           </li>
           <li>
-            Action « Encoder l'URL » (ou « Encoder » du texte) appliquée à l'<em
-              >Entrée du raccourci</em
-            >.
+            {{ "Action « Encoder l'URL » (ou « Encoder » du texte) appliquée à l'" | t }}
+            <em> {{ 'Entrée du raccourci' | t }} </em>.
           </li>
           <li>
-            Action « Texte » contenant <code>{{ shortcutPrefix }}</code> suivi du résultat encodé.
+            {{ 'Action « Texte » contenant' | t }} <code>{{ shortcutPrefix }}</code>
+            {{ 'suivi du résultat encodé.' | t }}
           </li>
-          <li>Action « Ouvrir les URL » appliquée à ce texte.</li>
+          <li>{{ 'Action « Ouvrir les URL » appliquée à ce texte.' | t }}</li>
         </ol>
         <p class="meta">
-          Ensuite : dans Safari, Partager → « Ajouter à mes-liens ». La page s'ouvre dans Safari, le
-          lien est enregistré sur le serveur et apparaît dans l'app installée à sa prochaine mise à
-          jour.
+          {{
+            "Ensuite : dans Safari, Partager → « Ajouter à mes-liens ». La page s'ouvre dans Safari, le lien est enregistré sur le serveur et apparaît dans l'app installée à sa prochaine mise à jour."
+              | t
+          }}
         </p>
       </section>
 
       <details class="card">
-        <summary>Technique : sauvegarde JSON complète et connexion au serveur</summary>
-        <h3>Sauvegarde JSON complète</h3>
+        <summary>{{ 'Technique : sauvegarde JSON complète et connexion au serveur' | t }}</summary>
+        <h3>{{ 'Sauvegarde JSON complète' | t }}</h3>
         <p class="meta">
-          Tous les liens, y compris l'historique et les liens supprimés (hors captures). Sert à
-          restaurer exactement un état.
+          {{
+            "Tous les liens, y compris l'historique et les liens supprimés (hors captures). Sert à restaurer exactement un état."
+              | t
+          }}
         </p>
         <div class="row">
-          <button type="button" (click)="exportJson()">Exporter (.json)</button>
-          <label class="ghost btn"
-            >Importer (.json)
+          <button type="button" (click)="exportJson()">{{ 'Exporter (.json)' | t }}</button>
+          <label class="ghost btn">
+            {{ 'Importer (.json)' | t }}
             <input
               type="file"
               accept="application/json,.json"
@@ -220,34 +265,45 @@ import { ZipImportPlan } from '../core/zip-backup';
           </label>
         </div>
 
-        <h3>Connexion au serveur</h3>
+        <h3>{{ 'Connexion au serveur' | t }}</h3>
         <p class="meta">
-          Tes liens sont enregistrés sur ton serveur ; l'application les y envoie et les y reprend
-          toute seule, sans rien à faire. État : <strong>{{ statusLabel() }}</strong>
+          {{
+            "Tes liens sont enregistrés sur ton serveur ; l'application les y envoie et les y reprend toute seule, sans rien à faire. État :"
+              | t
+          }}
+          <strong> {{ statusLabel() | t }} </strong>
           @if (sync.lastSyncAt()) {
-            · dernière mise à jour {{ sync.lastSyncAt() | date: 'dd/MM/yyyy HH:mm:ss' }}
+            {{
+              '· dernière mise à jour {0}'
+                | t: [sync.lastSyncAt() | localDate: 'dd/MM/yyyy HH:mm:ss']
+            }}
           }
         </p>
         @if (sync.message()) {
-          <p class="meta" role="status">{{ sync.message() }}</p>
+          <p class="meta" role="status">{{ sync.message() | t }}</p>
         }
         @if (sync.gateway()) {
-          <p class="meta">Connecté automatiquement par le serveur : aucun jeton à saisir.</p>
+          <p class="meta">
+            {{ 'Connecté automatiquement par le serveur : aucun jeton à saisir.' | t }}
+          </p>
         } @else {
           <form (submit)="connect($event)">
-            <label
-              >URL du serveur
+            <label>
+              {{ 'URL du serveur' | t }}
               <input
                 type="text"
                 inputmode="url"
                 autocomplete="off"
-                placeholder="https://liens.example.com"
+                [placeholder]="'https://liens.example.com' | t"
                 [value]="cfgUrl()"
                 (input)="cfgUrl.set(val($event))"
               />
             </label>
-            <label
-              >Jeton <small>(32 caractères minimum, stocké uniquement sur cet appareil)</small>
+            <label>
+              {{ 'Jeton' | t }}
+              <small>
+                {{ '(32 caractères minimum, stocké uniquement sur cet appareil)' | t }}
+              </small>
               <input
                 type="password"
                 autocomplete="off"
@@ -256,28 +312,36 @@ import { ZipImportPlan } from '../core/zip-backup';
               />
             </label>
             @if (cfgError()) {
-              <p class="error" role="alert">{{ cfgError() }}</p>
+              <p class="error" role="alert">{{ cfgError() | t }}</p>
             }
-            <button type="submit" class="primary">Enregistrer et se connecter</button>
+            <button type="submit" class="primary">{{ 'Enregistrer et se connecter' | t }}</button>
           </form>
         }
         @if (sync.status() !== 'unconfigured') {
           <div class="row">
-            <button type="button" (click)="sync.syncNow()">Mettre à jour maintenant</button>
+            <button type="button" (click)="sync.syncNow()">
+              {{ 'Mettre à jour maintenant' | t }}
+            </button>
             @if (!sync.gateway()) {
-              <button type="button" class="ghost danger" (click)="disconnect()">Déconnecter</button>
+              <button type="button" class="ghost danger" (click)="disconnect()">
+                {{ 'Déconnecter' | t }}
+              </button>
             }
           </div>
         }
       </details>
 
       @if (info()) {
-        <p class="toast" role="status">{{ info() }}</p>
+        <p class="toast" role="status">{{ info() | t }}</p>
       }
     </main>
   `,
 })
 export class AdminPage {
+  protected readonly i18n = inject(I18nService);
+  protected translatedFields(fields: string[]): string {
+    return fields.map((field) => this.i18n.t(field)).join(', ');
+  }
   protected readonly svc = inject(LinkService);
   protected readonly sync = inject(SyncService);
 
@@ -420,7 +484,9 @@ export class AdminPage {
     input.value = '';
     if (!file) return;
     const replace = confirm(
-      'OK = REMPLACER toutes les données locales par ce fichier.\nAnnuler = FUSIONNER (le plus récent gagne).',
+      this.i18n.t(
+        'OK = REMPLACER toutes les données locales par ce fichier.\nAnnuler = FUSIONNER (le plus récent gagne).',
+      ),
     );
     try {
       const r = await this.svc.importJson(await file.text(), replace ? 'replace' : 'merge');
@@ -442,7 +508,7 @@ export class AdminPage {
   }
 
   protected async disconnect(): Promise<void> {
-    if (confirm('Déconnecter ? Les données locales sont conservées.')) {
+    if (confirm(this.i18n.t('Déconnecter ? Les données locales sont conservées.'))) {
       await this.sync.disconnect();
       this.cfgUrl.set('');
     }

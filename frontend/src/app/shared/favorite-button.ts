@@ -1,8 +1,10 @@
+import { TranslatePipe } from '../core/i18n';
 import { Component, inject, input, signal } from '@angular/core';
 import { LinkService } from '../core/link.service';
 import { Link } from '../core/models';
 
 @Component({
+  imports: [TranslatePipe],
   selector: 'app-favorite-button',
   template: `
     <button
@@ -12,14 +14,14 @@ import { Link } from '../core/models';
       [disabled]="busy()"
       [attr.aria-pressed]="!!link().favorite"
       [attr.aria-label]="
-        (link().favorite ? 'Retirer des favoris : ' : 'Ajouter aux favoris : ') + link().title
+        (link().favorite ? 'Retirer des favoris : ' : 'Ajouter aux favoris : ') + link().title | t
       "
       (click)="toggle()"
     >
-      {{ link().favorite ? '★ Favori' : '☆ Favori' }}
+      {{ (link().favorite ? '★ Favori' : '☆ Favori') | t }}
     </button>
     @if (error()) {
-      <span class="error" role="alert">{{ error() }}</span>
+      <span class="error" role="alert"> {{ error() | t }} </span>
     }
   `,
 })

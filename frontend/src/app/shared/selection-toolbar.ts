@@ -1,3 +1,4 @@
+import { I18nService, TranslatePipe } from '../core/i18n';
 import {
   Component,
   computed,
@@ -36,11 +37,13 @@ export function toggleSelection(selected: ReadonlySet<string>, id: string): Read
 }
 
 @Component({
+  imports: [TranslatePipe],
   selector: 'app-selection-toolbar',
   templateUrl: './selection-toolbar.html',
   host: { '[class.has-selection]': 'picked().length > 0' },
 })
 export class SelectionToolbar {
+  protected readonly i18n = inject(I18nService);
   private readonly svc = inject(LinkService);
   private readonly insights = inject(InsightsService);
   readonly links = input.required<Link[]>();
@@ -89,10 +92,12 @@ export class SelectionToolbar {
     if (
       action === 'delete' &&
       !confirm(
-        `Supprimer les ${ids.length} liens sélectionnés ?\n\n${picked
-          .slice(0, 5)
-          .map((l) => l.title)
-          .join('\n')}`,
+        this.i18n.t(
+          `Supprimer les ${ids.length} liens sélectionnés ?\n\n${picked
+            .slice(0, 5)
+            .map((l) => l.title)
+            .join('\n')}`,
+        ),
       )
     )
       return;

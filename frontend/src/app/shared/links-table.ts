@@ -1,7 +1,7 @@
+import { I18nService, CategoryLabelPipe, TranslatePipe, LocalDatePipe } from '../core/i18n';
 import { FavoriteButton } from './favorite-button';
 import { SelectionToolbar } from './selection-toolbar';
 import { Component, computed, inject, input, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { SortDir, SortKey, sortLinks } from '../core/catalog';
 import { LinkService } from '../core/link.service';
@@ -21,10 +21,19 @@ interface Column {
 /** Tableau de liens : tri sur chaque colonne, recherche, pagination « afficher plus », actions (ouvrir, modifier, supprimer). */
 @Component({
   selector: 'app-links-table',
-  imports: [FavoriteButton, SelectionToolbar, DatePipe, RouterLink, FocusButton],
+  imports: [
+    CategoryLabelPipe,
+    TranslatePipe,
+    FavoriteButton,
+    SelectionToolbar,
+    LocalDatePipe,
+    RouterLink,
+    FocusButton,
+  ],
   templateUrl: './links-table.html',
 })
 export class LinksTable {
+  protected readonly i18n = inject(I18nService);
   protected readonly svc = inject(LinkService);
   protected readonly insights = inject(InsightsService);
   protected readonly healthLabels = HEALTH_LABELS;
@@ -148,7 +157,7 @@ export class LinksTable {
   }
 
   protected async remove(l: Link): Promise<void> {
-    if (!confirm(`Supprimer « ${l.title} » ?`)) return;
+    if (!confirm(this.i18n.t(`Supprimer « ${l.title} » ?`))) return;
     await this.svc.remove(l.id);
     this.selected.update((s) => {
       const n = new Set(s);

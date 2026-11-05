@@ -1,3 +1,4 @@
+import { CategoryLabelPipe, TranslatePipe } from '../core/i18n';
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { groupYoutube } from '../core/catalog';
@@ -8,34 +9,35 @@ import { LinkList } from '../shared/link-list';
 /** Tous les liens YouTube, rangés par catégorie : formation, music, korean bands, korean learning, japanese learning, japanese bands. */
 @Component({
   selector: 'app-youtube',
-  imports: [LinkList, RouterLink],
+  imports: [CategoryLabelPipe, TranslatePipe, LinkList, RouterLink],
   template: `
     <main class="page">
       <section aria-labelledby="yt-h">
         <h2 id="yt-h">
-          YouTube <small class="meta">· {{ total() }} lien{{ total() > 1 ? 's' : '' }}</small>
+          YouTube
+          <small class="meta"> {{ '· {0} lien{1}' | t: [total(), total() > 1 ? 's' : ''] }} </small>
         </h2>
         <div class="filters">
           <input
             type="search"
-            placeholder="Rechercher dans YouTube…"
-            aria-label="Rechercher dans YouTube"
+            [placeholder]="'Rechercher dans YouTube…' | t"
+            [attr.aria-label]="'Rechercher dans YouTube' | t"
             [value]="query()"
             (input)="query.set(val($event))"
           />
         </div>
-        <ul class="tags" aria-label="Aller à une section">
+        <ul class="tags" [attr.aria-label]="'Aller à une section' | t">
           @for (s of grouped().sections; track s.category) {
             <li>
               <a class="badge cat" [href]="'#yt-' + slug(s.category)"
-                >{{ s.category }} <small>{{ s.links.length }}</small></a
+                >{{ s.category | categoryLabel }} <small>{{ s.links.length }}</small></a
               >
             </li>
           }
           @if (grouped().others.length) {
             <li>
-              <a class="badge" href="#yt-others"
-                >autres <small>{{ grouped().others.length }}</small></a
+              <a class="badge" href="#yt-others">
+                {{ 'autres' | t }} <small>{{ grouped().others.length }}</small></a
               >
             </li>
           }
@@ -48,15 +50,17 @@ import { LinkList } from '../shared/link-list';
           [id]="'yt-' + slug(s.category)"
         >
           <h3 [id]="'yt-h-' + slug(s.category)">
-            <a [routerLink]="['/category', s.category]">{{ s.category }}</a>
+            <a [routerLink]="['/category', s.category]">{{ s.category | categoryLabel }}</a>
             <small class="meta">· {{ s.links.length }}</small>
           </h3>
           @if (s.links.length) {
             <app-link-list [links]="s.links" [filters]="false" />
           } @else {
             <p class="empty">
-              Aucune vidéo pour l'instant. Enregistre un lien YouTube et choisis la catégorie «
-              {{ s.category }} ».
+              {{
+                "Aucune vidéo pour l'instant. Enregistre un lien YouTube et choisis la catégorie « {0} »."
+                  | t: [s.category]
+              }}
             </p>
           }
         </section>
@@ -65,11 +69,14 @@ import { LinkList } from '../shared/link-list';
       @if (grouped().others.length) {
         <section id="yt-others" aria-labelledby="yt-h-others">
           <h3 id="yt-h-others">
-            Autres vidéos YouTube <small class="meta">· {{ grouped().others.length }}</small>
+            {{ 'Autres vidéos YouTube' | t }}
+            <small class="meta">· {{ grouped().others.length }}</small>
           </h3>
           <p class="meta">
-            Non classées, ou dans une catégorie qui n'est pas listée ci-dessus. Modifie le lien pour
-            choisir une catégorie.
+            {{
+              "Non classées, ou dans une catégorie qui n'est pas listée ci-dessus. Modifie le lien pour choisir une catégorie."
+                | t
+            }}
           </p>
           <app-link-list [links]="grouped().others" [filters]="false" />
         </section>

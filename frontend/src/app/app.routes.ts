@@ -6,11 +6,13 @@ import { EditPage } from './pages/edit';
 import { FocusPage } from './pages/focus';
 import { HomePage } from './pages/home';
 import { SitesPage } from './pages/sites';
+import { SourcesPage } from './pages/sources';
 import { TablePage } from './pages/table';
 import { YoutubePage } from './pages/youtube';
 import { LibraryPage } from './pages/library';
 
 export const routes: Routes = [
+  { path: 'sources', component: SourcesPage, title: 'Sources — mes-liens' },
   { path: 'library', component: LibraryPage, title: 'Bibliothèque — mes-liens' },
   { path: '', component: HomePage, title: 'mes-liens' },
   { path: 'admin', component: AdminPage, title: 'Administration — mes-liens' },

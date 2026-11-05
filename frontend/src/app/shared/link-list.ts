@@ -1,8 +1,8 @@
+import { I18nService, CategoryLabelPipe, TranslatePipe, LocalDatePipe } from '../core/i18n';
 import { FavoriteButton } from './favorite-button';
 import { SelectionToolbar, toggleSelection } from './selection-toolbar';
 import { LinkInsight } from './link-insight';
 import { Component, computed, inject, input, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { LinkService } from '../core/link.service';
 import { SyncService } from '../core/sync.service';
@@ -15,10 +15,20 @@ const PAGE_SIZE = 48;
 /** Liste en cartes avec recherche et filtre par étiquettes. Utilisée par l'accueil et les pages de catégorie. */
 @Component({
   selector: 'app-link-list',
-  imports: [FavoriteButton, SelectionToolbar, LinkInsight, DatePipe, RouterLink, FocusButton],
+  imports: [
+    CategoryLabelPipe,
+    TranslatePipe,
+    FavoriteButton,
+    SelectionToolbar,
+    LinkInsight,
+    LocalDatePipe,
+    RouterLink,
+    FocusButton,
+  ],
   templateUrl: './link-list.html',
 })
 export class LinkList {
+  protected readonly i18n = inject(I18nService);
   protected readonly svc = inject(LinkService);
   protected readonly sync = inject(SyncService);
 
@@ -74,6 +84,6 @@ export class LinkList {
   }
 
   protected async remove(l: Link): Promise<void> {
-    if (confirm(`Supprimer « ${l.title} » ?`)) await this.svc.remove(l.id);
+    if (confirm(this.i18n.t(`Supprimer « ${l.title} » ?`))) await this.svc.remove(l.id);
   }
 }

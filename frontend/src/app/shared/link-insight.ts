@@ -1,29 +1,29 @@
+import { TranslatePipe, LocalDatePipe } from '../core/i18n';
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { Link } from '../core/models';
 import { HEALTH_LABELS, InsightsService } from '../core/insights.service';
 import { LinkService } from '../core/link.service';
 @Component({
   selector: 'app-link-insight',
-  imports: [DatePipe],
+  imports: [TranslatePipe, LocalDatePipe],
   template: `
     @if (record(); as r) {
       @if (!link().screenshotId && image(); as src) {
         <img
           class="thumb"
           [src]="src"
-          alt="Capture automatique de la page enregistrée"
+          alt="" [alt]="'Capture automatique de la page enregistrée' | t"
           loading="lazy"
         />
       }
       @if (detail()) {
         <p class="meta">
-          {{ labels[r.status] || r.status }}
+          {{ labels[r.status] || r.status | t }}
           @if (r.checkedAt) {
-            · Vérifié le {{ r.checkedAt | date: 'dd/MM/yyyy HH:mm' }}
+            {{ '· Vérifié le {0}' | t: [r.checkedAt | localDate: 'dd/MM/yyyy HH:mm'] }}
           }
           @if (r.httpStatus) {
-            · HTTP {{ r.httpStatus }}
+            {{ '· HTTP {0}' | t: [r.httpStatus] }}
           }
         </p>
         @if (r.title) {
@@ -35,22 +35,32 @@ import { LinkService } from '../core/link.service';
           <p>{{ r.description }}</p>
         }
         @if (r.capturedAt) {
-          <p class="meta">Capture du {{ r.capturedAt | date: 'dd/MM/yyyy HH:mm' }}</p>
+          <p class="meta">
+            {{ 'Capture du {0}' | t: [r.capturedAt | localDate: 'dd/MM/yyyy HH:mm'] }}
+          </p>
         }
         @if (!r.screenshotId) {
           <p class="meta">
-            Pas de capture automatique disponible. Tu peux ajouter ta propre capture dans Modifier.
+            {{
+              'Pas de capture automatique disponible. Tu peux ajouter ta propre capture dans Modifier.'
+                | t
+            }}
           </p>
         }
       }
     } @else if (detail()) {
       <p class="meta">
-        Pas encore vérifié. Les pages publiques sont traitées progressivement en arrière-plan.
+        {{
+          'Pas encore vérifié. Les pages publiques sont traitées progressivement en arrière-plan.'
+            | t
+        }}
       </p>
     }
     @if (detail()) {
-      <button type="button" [disabled]="busy()" (click)="recheck()">Vérifier à nouveau</button>
-      <p role="status" class="meta">{{ message() }}</p>
+      <button type="button" [disabled]="busy()" (click)="recheck()">
+        {{ 'Vérifier à nouveau' | t }}
+      </button>
+      <p role="status" class="meta">{{ message() | t }}</p>
     }
   `,
 })

@@ -1,3 +1,4 @@
+import { TranslatePipe } from '../core/i18n';
 import { Component, input, signal } from '@angular/core';
 import { Link } from '../core/models';
 import { LinkList } from './link-list';
@@ -26,18 +27,33 @@ function savedMode(): ViewMode {
 /** Plusieurs façons de voir les mêmes liens : cartes, liste compacte, tableau, regroupé par source. Le choix est mémorisé sur l'appareil. */
 @Component({
   selector: 'app-link-views',
-  imports: [LinkList, LinkRows, LinksTable],
+  imports: [TranslatePipe, LinkList, LinkRows, LinksTable],
   template: `
-    <div class="view-switch" role="group" aria-label="Mode d'affichage">
+    <div class="view-switch" role="group" [attr.aria-label]="'Mode d\\'affichage' | t">
       @for (m of modes; track m.mode) {
-        <button type="button" [class.on]="mode() === m.mode" [attr.aria-pressed]="mode() === m.mode" (click)="set(m.mode)">{{ m.label }}</button>
+        <button
+          type="button"
+          [class.on]="mode() === m.mode"
+          [attr.aria-pressed]="mode() === m.mode"
+          (click)="set(m.mode)"
+        >
+          {{ m.label | t }}
+        </button>
       }
     </div>
     @switch (mode()) {
-      @case ('list') { <app-link-rows [links]="links()" /> }
-      @case ('sources') { <app-link-rows [links]="links()" [grouped]="true" /> }
-      @case ('table') { <app-links-table [links]="links()" /> }
-      @default { <app-link-list [links]="links()" /> }
+      @case ('list') {
+        <app-link-rows [links]="links()" />
+      }
+      @case ('sources') {
+        <app-link-rows [links]="links()" [grouped]="true" />
+      }
+      @case ('table') {
+        <app-links-table [links]="links()" />
+      }
+      @default {
+        <app-link-list [links]="links()" />
+      }
     }
   `,
 })
