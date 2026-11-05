@@ -1,3 +1,4 @@
+@if (filters()) {
 <div class="filters">
   <input type="search" placeholder="Rechercher (titre, url, note, étiquette)…" aria-label="Rechercher"
          [value]="query()" (input)="query.set(val($event))" />
@@ -19,6 +20,7 @@
 }
 
 <p class="meta" aria-live="polite">{{ visible().length }} résultat{{ visible().length > 1 ? 's' : '' }}</p>
+}
 
 @if (!svc.ready()) {
   <p>Chargement…</p>

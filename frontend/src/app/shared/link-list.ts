@@ -15,6 +15,8 @@ export class LinkList {
   protected readonly svc = inject(LinkService);
 
   readonly links = input.required<Link[]>();
+  /** false : pas de recherche ni d'étiquettes (la page parente filtre elle-même). */
+  readonly filters = input(true);
 
   protected readonly query = signal('');
   protected readonly activeTags = signal<string[]>([]);

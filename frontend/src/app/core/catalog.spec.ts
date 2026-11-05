@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { categoryCounts, detectSource, normalizeCategory, sortLinks } from './catalog';
+import { YOUTUBE_CATEGORIES, categoryCounts, detectSource, groupYoutube, isYoutube, normalizeCategory, sortLinks } from './catalog';
 import { Link } from './models';
 
 const mk = (id: string, over: Partial<Link>): Link => ({
@@ -44,5 +44,28 @@ describe('sortLinks', () => {
     const copy = [...links];
     sortLinks(links, 'title', 'desc');
     expect(links).toEqual(copy);
+  });
+});
+
+
+describe('YouTube', () => {
+  it('reconnaît les adresses YouTube et rien d’autre', () => {
+    for (const u of ['https://www.youtube.com/watch?v=1', 'https://youtube.com/@x', 'https://m.youtube.com/x', 'https://music.youtube.com/x', 'https://youtu.be/abc']) expect(isYoutube(u), u).toBe(true);
+    for (const u of ['https://notyoutube.com', 'https://youtube.com.evil.example/x', 'https://example.com/youtube.com', 'pas une url']) expect(isYoutube(u), u).toBe(false);
+  });
+  it('détecte la source YouTube sans imposer de catégorie', () => {
+    expect(detectSource('https://youtu.be/abc')).toEqual({ source: 'YouTube', category: '' });
+  });
+  it('range les liens YouTube dans les 6 sections (toujours présentes), le reste dans « autres »', () => {
+    const yt = (id: string, category: string) => mk(id, { url: `https://www.youtube.com/watch?v=${id}`, category });
+    const g = groupYoutube([
+      yt('1', 'music'), yt('2', 'korean bands'), yt('3', 'korean bands'), yt('4', ''), yt('5', 'cuisine'),
+      mk('web', { url: 'https://example.com', category: 'music' }), // pas YouTube : exclu
+    ]);
+    expect(g.sections.map((s) => s.category)).toEqual([...YOUTUBE_CATEGORIES]);
+    expect(Object.fromEntries(g.sections.map((s) => [s.category, s.links.length]))).toEqual({
+      formation: 0, music: 1, 'korean bands': 2, 'korean learning': 0, 'japanese learning': 0, 'japanese bands': 0,
+    });
+    expect(g.others.map((l) => l.id)).toEqual(['4', '5']);
   });
 });

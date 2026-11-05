@@ -57,3 +57,10 @@
 ## 2026-11-05 — Fiche d'un lien
 - « Ouvrir » (tableau et cartes) ouvre maintenant la fiche du lien (`/link/:id`) : adresse, source, catégorie, étiquettes, note, capture, dates et historique des événements. Le site s'ouvre depuis « Aller au site » (nouvel onglet, `noopener noreferrer`). Le titre cliquable du tableau et des cartes ouvre toujours le site.
 - Vérifié dans le navigateur. L'historique affiché est celui du journal d'événements ; la vue historique chronologique globale reste la phase 6.
+
+## 2026-11-05 — Page YouTube
+- Nouvelle page `/youtube` : les liens dont l'adresse est YouTube (`youtube.com`, sous-domaines dont `music.`, `m.`, et `youtu.be`) rangés en 6 sections — formation, music, korean bands, korean learning, japanese learning, japanese bands — toujours toutes affichées (même vides, avec un message), plus « Autres vidéos YouTube » (non classées ou catégorie hors liste). Recherche, raccourcis vers les sections, chaque titre de section mène à `/category/<nom>`.
+- Ce sont de simples catégories (texte libre) : aucune migration, elles sont proposées dans le formulaire et ont aussi leur page de catégorie. Les liens YouTube reçoivent automatiquement la source « YouTube » mais PAS de catégorie (une vidéo peut être de la formation comme de la musique) : à choisir à la création ou en modifiant.
+- Le critère « YouTube » se base sur l'URL, pas sur la source saisie (testé : `notyoutube.com`, `youtube.com.evil.example` rejetés).
+- Limite : une vidéo ne peut avoir qu'une catégorie. Une vidéo « music » + « korean bands » doit choisir l'une des deux (les étiquettes libres, elles, sont multiples).
+- Tests : 61 (front).

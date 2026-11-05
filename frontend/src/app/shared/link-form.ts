@@ -1,5 +1,5 @@
 import { Component, HostListener, OnInit, computed, inject, input, output, signal } from '@angular/core';
-import { categoryCounts, detectSource, normalizeCategory } from '../core/catalog';
+import { YOUTUBE_CATEGORIES, categoryCounts, detectSource, normalizeCategory } from '../core/catalog';
 import { isImage, shrinkImage } from '../core/image';
 import { LinkService } from '../core/link.service';
 import { normalizeUrl, parseTags, tagCounts } from '../core/link-utils';
@@ -31,7 +31,7 @@ export class LinkForm implements OnInit {
   private categoryTouched = false;
   private sourceTouched = false;
 
-  protected readonly categories = computed(() => categoryCounts(this.svc.links()).map((c) => c.category));
+  protected readonly categories = computed(() => [...new Set([...categoryCounts(this.svc.links()).map((c) => c.category), ...YOUTUBE_CATEGORIES])]);
   protected readonly knownTags = computed(() => tagCounts(this.svc.links()).map((t) => t.tag));
   protected readonly currentShot = computed(() => {
     const id = this.link()?.screenshotId;

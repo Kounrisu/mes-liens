@@ -3,6 +3,9 @@ import { Link } from './models';
 /** Catégories proposées d'office ; l'utilisateur peut en saisir d'autres librement (elles apparaissent alors dans le menu). */
 export const DEFAULT_CATEGORIES = ['formation', 'manga', 'anime', 'utile', 'emploi', 'veille', 'autre'] as const;
 
+/** Sections de la page YouTube (catégories libres comme les autres : elles se choisissent dans le formulaire). */
+export const YOUTUBE_CATEGORIES = ['formation', 'music', 'korean bands', 'korean learning', 'japanese learning', 'japanese bands'] as const;
+
 /** Libellé affiché pour une catégorie vide. */
 export const UNCATEGORIZED = 'non classé';
 
@@ -33,6 +36,9 @@ export const KNOWN_SOURCES: readonly KnownSource[] = [
   { domain: 'anilist.co', name: 'AniList', category: 'anime' },
   { domain: 'myanimelist.net', name: 'MyAnimeList', category: 'anime' },
   { domain: 'mangadex.org', name: 'MangaDex', category: 'manga' },
+  // YouTube : la source est reconnue, la catégorie reste à choisir (une vidéo peut être de la formation, de la musique…).
+  { domain: 'youtube.com', name: 'YouTube', category: '' },
+  { domain: 'youtu.be', name: 'YouTube', category: '' },
 ];
 
 export function detectSource(url: string): { source: string; category: string } | null {
@@ -77,4 +83,28 @@ export function sortLinks(links: readonly Link[], key: SortKey, dir: SortDir): L
     if (vb === '' && va !== '') return -1;
     return sign * collator.compare(va, vb);
   });
+}
+
+export function isYoutube(url: string): boolean {
+  try {
+    const h = new URL(url).hostname.toLowerCase();
+    return h === 'youtu.be' || h === 'youtube.com' || h.endsWith('.youtube.com');
+  } catch {
+    return false;
+  }
+}
+
+export interface YoutubeSection {
+  category: string;
+  links: Link[];
+}
+
+/** Liens YouTube répartis dans les sections demandées (toujours toutes présentes, même vides), puis « autres » (hors liste ou non classés). */
+export function groupYoutube(links: readonly Link[]): { sections: YoutubeSection[]; others: Link[] } {
+  const yt = links.filter((l) => isYoutube(l.url));
+  const wanted = YOUTUBE_CATEGORIES as readonly string[];
+  return {
+    sections: YOUTUBE_CATEGORIES.map((category) => ({ category, links: yt.filter((l) => l.category === category) })),
+    others: yt.filter((l) => !wanted.includes(l.category)),
+  };
 }
