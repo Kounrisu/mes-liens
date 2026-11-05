@@ -39,6 +39,15 @@ public class LinkService {
         return new UpsertResult(e.toDto(), false, false);
     }
 
+    /**
+     * Même règle que {@link #upsert}, pour un lot, en UNE transaction (tout ou rien : si un élément est refusé, rien n'est écrit
+     * et le client réessaie élément par élément pour isoler le fautif). Retourne, dans le même ordre, la version qui fait foi.
+     */
+    @Transactional
+    public List<LinkDto> upsertAll(List<LinkDto> batch) {
+        return batch.stream().map(in -> upsert(in).link()).toList();
+    }
+
     @Transactional(readOnly = true)
     public Optional<LinkDto> find(UUID id) {
         return repo.findById(id).map(LinkEntity::toDto);

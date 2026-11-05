@@ -25,20 +25,25 @@ class FakeServer implements SyncApi {
     if (this.failAt !== null && ++this.n === this.failAt) throw new SyncNetworkError('coupure');
   }
 
-  async putLink(l: Link): Promise<Link> {
-    this.gate(`putLink:${l.title}`);
-    if (this.onPutLink) await this.onPutLink(l);
-    if (this.rejectLinkId === l.id) throw new SyncHttpError(400, 'refusé');
-    const cur = this.links.get(l.id);
-    if (!cur || Date.parse(l.updatedAt) > Date.parse(cur.link.updatedAt)) {
-      this.links.set(l.id, { link: structuredClone(l), seq: ++this.seq });
-      return structuredClone(l);
+  /** Lot atomique, comme le vrai serveur : si un élément est refusé, RIEN n'est écrit. */
+  async pushLinks(ls: Link[]): Promise<Link[]> {
+    this.gate('pushLinks'); // une requête
+    if (ls.some((l) => l.id === this.rejectLinkId)) throw new SyncHttpError(400, 'refusé');
+    const out: Link[] = [];
+    for (const l of ls) {
+      this.calls.push(`putLink:${l.title}`);
+      if (this.onPutLink) await this.onPutLink(l);
+      const cur = this.links.get(l.id);
+      if (!cur || Date.parse(l.updatedAt) > Date.parse(cur.link.updatedAt)) {
+        this.links.set(l.id, { link: structuredClone(l), seq: ++this.seq });
+        out.push(structuredClone(l));
+      } else out.push(structuredClone(cur.link));
     }
-    return structuredClone(cur.link);
+    return out;
   }
-  async postEvent(e: LinkEvent): Promise<void> {
-    this.gate(`postEvent:${e.id}`);
-    if (!this.events.has(e.id)) this.events.set(e.id, { ev: structuredClone(e), seq: ++this.seq });
+  async pushEvents(es: LinkEvent[]): Promise<void> {
+    this.gate('pushEvents');
+    for (const e of es) if (!this.events.has(e.id)) this.events.set(e.id, { ev: structuredClone(e), seq: ++this.seq });
   }
   async putScreenshot(id: string, b: Blob): Promise<void> {
     this.gate(`putScreenshot:${id}`);
@@ -73,9 +78,9 @@ const ev = (id: string, linkId: string, at: string): LinkEvent => ({ id, linkId,
 let server: FakeServer;
 let n = 0;
 const devices: { store: LinkStore; engine: SyncEngine }[] = [];
-async function device() {
+async function device(batchSize?: number) {
   const store = await LinkStore.open(`sync-${n++}`);
-  const d = { store, engine: new SyncEngine(store, server, () => T(59)) };
+  const d = { store, engine: new SyncEngine(store, server, () => T(59), batchSize) };
   devices.push(d);
   return d;
 }
@@ -231,7 +236,7 @@ describe('suppressions (tombstones)', () => {
 
 describe('robustesse', () => {
   it('coupure au milieu de la poussée : le reste est poussé ensuite, sans doublon', async () => {
-    const a = await device();
+    const a = await device(1); // un élément par requête : la 3e requête tombe au milieu des liens
     for (let i = 0; i < 4; i++) await a.store.putLink(mk('l' + i, 't' + i, i + 1));
     await a.store.addEvent(ev('e1', 'l0', T(1)));
     server.failAt = 3; // la 3e requête échoue
@@ -271,6 +276,35 @@ describe('robustesse', () => {
     const r = await a.engine.sync();
     expect(r.rejected).toHaveLength(1);
     expect(server.links.has('ok')).toBe(true);
+    expect((await a.store.listDirty()).map((d) => d.id)).toEqual(['bad']);
+  });
+
+  it('import massif : 1 000 liens et leurs événements partent par lots (peu de requêtes, sous la limite de débit), puis un autre appareil les reçoit', async () => {
+    const a = await device();
+    const b = await device();
+    for (let i = 0; i < 1000; i++) {
+      await a.store.putLink(mk('m' + i, 'lien ' + i, 1 + (i % 50)));
+      await a.store.addEvent(ev('ev' + i, 'm' + i, T(1)));
+    }
+    await a.engine.sync();
+    const pushes = server.calls.filter((c) => c === 'pushLinks' || c === 'pushEvents').length;
+    expect(pushes).toBe(10); // 5 lots de liens + 5 lots d'événements (200 par lot), au lieu de 2 000 requêtes
+    expect(server.links.size).toBe(1000);
+    expect(server.events.size).toBe(1000);
+    expect(await a.store.listDirty()).toEqual([]);
+    await b.engine.sync();
+    expect((await b.store.listLinks()).length).toBe(1000);
+    expect((await b.store.listEvents()).length).toBe(1000);
+  });
+
+  it('un lot refusé est rejoué élément par élément : seul le fautif reste à pousser, les 199 autres partent', async () => {
+    const a = await device();
+    for (let i = 0; i < 50; i++) await a.store.putLink(mk('g' + i, 'bon ' + i, 1 + i));
+    await a.store.putLink(mk('bad', 'mauvais', 5));
+    server.rejectLinkId = 'bad';
+    const r = await a.engine.sync();
+    expect(r.rejected).toHaveLength(1);
+    expect(server.links.size).toBe(50);
     expect((await a.store.listDirty()).map((d) => d.id)).toEqual(['bad']);
   });
 

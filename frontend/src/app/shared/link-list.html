@@ -1,7 +1,7 @@
 @if (filters()) {
 <div class="filters">
   <input type="search" placeholder="Rechercher (titre, url, note, étiquette)…" aria-label="Rechercher"
-         [value]="query()" (input)="query.set(val($event))" />
+         [value]="query()" (input)="setQuery(val($event))" />
   @if (query() || activeTags().length) {
     <button type="button" class="ghost" (click)="resetFilters()">Effacer les filtres</button>
   }
@@ -31,7 +31,7 @@
 }
 
 <ul class="grid">
-  @for (l of visible(); track l.id) {
+  @for (l of shown(); track l.id) {
     <li class="card link">
       @if (l.screenshotId && svc.screenshotUrls()[l.screenshotId]; as src) {
         <a [href]="l.url" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
@@ -62,3 +62,6 @@
     </li>
   }
 </ul>
+@if (visible().length > shown().length) {
+  <p class="more"><button type="button" (click)="more()">Afficher plus ({{ visible().length - shown().length }} restants)</button></p>
+}

@@ -2,8 +2,8 @@
   <section aria-labelledby="table-h">
     <h2 id="table-h">Tous les liens</h2>
     <div class="filters">
-      <input type="search" placeholder="Rechercher…" aria-label="Rechercher" [value]="query()" (input)="query.set(val($event))" />
-      <select aria-label="Filtrer par catégorie" [value]="categoryFilter()" (change)="categoryOverride.set(val($event))">
+      <input type="search" placeholder="Rechercher…" aria-label="Rechercher" [value]="query()" (input)="setQuery(val($event))" />
+      <select aria-label="Filtrer par catégorie" [value]="categoryFilter()" (change)="setCategoryFilter(val($event))">
         <option value="">Toutes les catégories</option>
         @for (c of categories(); track c.category) {
           <option [value]="c.category" [selected]="categoryFilter() === c.category">{{ c.category }} ({{ c.count }})</option>
@@ -27,7 +27,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (l of rows(); track l.id) {
+          @for (l of shownRows(); track l.id) {
             <tr>
               <td class="title"><a [href]="l.url" target="_blank" rel="noopener noreferrer">{{ l.title }}</a> @if (l.kind === 'site') { <span class="badge">site</span> }
                 <div class="meta">{{ l.domain }}</div></td>
@@ -49,5 +49,8 @@
         </tbody>
       </table>
     </div>
+    @if (rows().length > shownRows().length) {
+      <p class="more"><button type="button" (click)="more()">Afficher plus ({{ rows().length - shownRows().length }} restants)</button></p>
+    }
   </section>
 </main>

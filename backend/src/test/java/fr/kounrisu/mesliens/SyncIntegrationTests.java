@@ -112,6 +112,45 @@ class SyncIntegrationTests {
         mvc.perform(get("/api/sync").secure(true)).andExpect(status().isUnauthorized());
     }
 
+    // ---- envoi par lots ----
+
+    @Test
+    void lot_deLiens_appliqueLaRegleDuPlusRecent_etRetourneLaVersionQuiFaitFoi() throws Exception {
+        UUID a = UUID.randomUUID(), b = UUID.randomUUID();
+        putLink(a, link(a, "A serveur récent", "2026-11-05T12:00:00Z", null));
+        String body = "{\"links\":[" + link(a, "A ancien", "2026-11-05T10:00:00Z", null) + "," + link(b, "B nouveau", "2026-11-05T10:00:00Z", null) + "]}";
+        mvc.perform(authed(post("/api/sync/links")).contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.links.length()").value(2))
+                .andExpect(jsonPath("$.links[0].title").value("A serveur récent")) // le serveur garde la plus récente
+                .andExpect(jsonPath("$.links[1].title").value("B nouveau"));
+        String pulled = pull(0);
+        assertThat(pulled).contains(b.toString());
+    }
+
+    @Test
+    void lot_estAtomique_unElementInvalideRefuseTout() throws Exception {
+        UUID good = UUID.randomUUID(), bad = UUID.randomUUID();
+        String body = "{\"links\":[" + link(good, "bon", "2026-11-05T10:00:00Z", null) + ","
+                + link(bad, "mauvais", "2026-11-05T10:00:00Z", null).replace("\"url\":\"https://example.com/a\"", "\"url\":\"\"") + "]}";
+        mvc.perform(authed(post("/api/sync/links")).contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isBadRequest());
+        assertThat(pull(0)).doesNotContain(good.toString()); // rien d'écrit
+    }
+
+    @Test
+    void lot_tropGrosRefuse_etEvenementsIdempotents() throws Exception {
+        StringBuilder big = new StringBuilder("{\"links\":[");
+        for (int i = 0; i < 501; i++) big.append(i == 0 ? "" : ",").append(link(UUID.randomUUID(), "x", "2026-11-05T10:00:00Z", null));
+        big.append("]}");
+        mvc.perform(authed(post("/api/sync/links")).contentType(MediaType.APPLICATION_JSON).content(big.toString())).andExpect(status().isBadRequest());
+
+        UUID ev = UUID.randomUUID();
+        String events = "{\"events\":[{\"id\":\"%s\",\"linkId\":\"%s\",\"type\":\"created\",\"payload\":{},\"at\":\"2026-11-05T10:00:00Z\"}]}".formatted(ev, UUID.randomUUID());
+        mvc.perform(authed(post("/api/sync/events")).contentType(MediaType.APPLICATION_JSON).content(events))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.added").value(1));
+        mvc.perform(authed(post("/api/sync/events")).contentType(MediaType.APPLICATION_JSON).content(events))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.added").value(0)); // rejeu : rien d'ajouté
+    }
     // ---- CORS ----
 
     @Test

@@ -46,7 +46,7 @@ describe('HttpSyncApi', () => {
     await expect(mk(async () => json({}, 503)).pull(0)).rejects.toBeInstanceOf(SyncNetworkError);
     await expect(mk(async () => json({}, 429)).pull(0)).rejects.toBeInstanceOf(SyncNetworkError);
     await expect(mk(async () => { throw new TypeError('Failed to fetch'); }).pull(0)).rejects.toBeInstanceOf(SyncNetworkError);
-    await expect(mk(async () => json({}, 400)).putLink(link)).rejects.toBeInstanceOf(SyncHttpError);
+    await expect(mk(async () => json({}, 400)).pushLinks([link])).rejects.toBeInstanceOf(SyncHttpError);
     expect(await mk(async () => json({}, 404)).getScreenshot('x')).toBeNull();
   });
 

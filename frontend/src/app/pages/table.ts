@@ -7,6 +7,8 @@ import { filterLinks } from '../core/link-utils';
 import { Link } from '../core/models';
 import { FocusButton } from '../shared/focus-button';
 
+const PAGE_SIZE = 100;
+
 interface Column {
   key: SortKey;
   label: string;
@@ -47,6 +49,23 @@ export class TablePage {
     const base = cat === '' ? this.svc.links() : this.svc.links().filter((l) => l.category === (cat === '_' ? '' : cat));
     return sortLinks(filterLinks(base, this.query(), []), this.sortKey(), this.sortDir());
   });
+
+  protected readonly limit = signal(PAGE_SIZE);
+  protected readonly shownRows = computed(() => this.rows().slice(0, this.limit()));
+
+  protected more(): void {
+    this.limit.update((n) => n + PAGE_SIZE);
+  }
+
+  protected setQuery(v: string): void {
+    this.query.set(v);
+    this.limit.set(PAGE_SIZE);
+  }
+
+  protected setCategoryFilter(v: string): void {
+    this.categoryOverride.set(v);
+    this.limit.set(PAGE_SIZE);
+  }
 
   protected sortBy(key: SortKey): void {
     if (this.sortKey() === key) this.sortDir.update((d) => (d === 'asc' ? 'desc' : 'asc'));

@@ -101,3 +101,5 @@ label.check span { display: grid; }
 
 .mini { margin: 0; padding-left: 1.1rem; display: grid; gap: .15rem; font-size: .9rem; }
 .mini a { color: var(--fg); overflow-wrap: anywhere; }
+
+.more { text-align: center; }

@@ -49,19 +49,18 @@ export class HttpSyncApi implements SyncApi {
     this.base = validateServerUrl(serverUrl);
   }
 
-  async putLink(link: Link): Promise<Link> {
-    const r = await this.req(`/api/links/${link.id}`, {
-      method: 'PUT',
+  async pushLinks(links: Link[]): Promise<Link[]> {
+    const r = await this.req('/api/sync/links', {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(link),
+      body: JSON.stringify({ links }),
     });
-    return normalizeLink((await r.json()) as Link);
+    return ((await r.json()) as { links: Link[] }).links.map(normalizeLink);
   }
 
-  async postEvent(event: LinkEvent): Promise<void> {
-    await this.req('/api/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(event) });
+  async pushEvents(events: LinkEvent[]): Promise<void> {
+    await this.req('/api/sync/events', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ events }) });
   }
-
   async putScreenshot(id: string, blob: Blob): Promise<void> {
     await this.req(`/api/screenshots/${id}`, { method: 'PUT', headers: { 'Content-Type': blob.type || 'application/octet-stream' }, body: blob });
   }

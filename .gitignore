@@ -25,3 +25,6 @@ Thumbs.db
 *.log
 
 data/
+
+# Données personnelles (favoris, exports) : ne JAMAIS commiter (dépôt public)
+imports/
