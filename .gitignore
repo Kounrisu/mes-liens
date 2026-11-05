@@ -1,0 +1,25 @@
+# Secrets / environnement
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+token*
+# Données locales
+uploads/
+captures/
+*.dump
+# Dépendances / builds
+node_modules/
+dist/
+.angular/
+target/
+build/
+.gradle/
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
