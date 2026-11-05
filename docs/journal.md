@@ -95,3 +95,10 @@
   2. Pagination « Afficher plus » (48 cartes / 100 lignes), remise à zéro quand les filtres changent.
 - **Non vérifié** : aucune importation réelle dans le navigateur avec 1 700 liens (validé avec fake-indexeddb seulement) ; performance d'affichage et de la première synchro à confirmer à l'usage. Le serveur déployé devra être mis à jour avec les nouveaux endpoints avant la première synchro (rien n'est déployé pour l'instant).
 - Tests : API 29 ; front 94 (+ e2e et validation de fichier d'import, ignorés par défaut : `IMPORT_FILE=imports/mes-liens-import.json npx ng test --watch=false`).
+
+## 2026-11-05 — Phase 0 : état des lieux du VPS (lecture seule)
+- L'accès (hôte, utilisateur) n'était pas dans la config SSH : retrouvé dans les runbooks de tes autres projets (`C:\dev\learning`, `07-my_server…`, `23-nesto/docs`), puis vérifié par connexion SSH par clé. Deux scripts en lecture seule (système, mémoire, disque, Docker, conteneurs, réseaux, volumes, ports, pare-feu, Caddyfile, certificats, mémoire par conteneur, sauvegardes). Aucun fichier de secrets lu (`.env`, compose de prod), rien modifié, rien déployé.
+- Rapport complet et plan : `docs/decisions/0001-deploiement-vps.md`.
+- Faits marquants : Caddy partagé + un PostgreSQL 16 par application en conteneur ; 1,6 Go de RAM disponibles sans swap ; disque à 80 % ; **aucune sauvegarde automatique** ; pas de DNS générique (enregistrement A à créer chez OVH).
+- Décision proposée : conteneurs dédiés (PostgreSQL 18, API, serveur statique), un seul bloc ajouté au Caddyfile + `caddy reload` (sans coupure), builds sur le PC, secrets générés sur le VPS.
+- Non vérifié : image Java 25 disponible ; mises à jour automatiques du système.
