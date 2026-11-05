@@ -1,5 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { buildBookmarklet, shortcutBase } from '../core/bookmarklet';
 import { ImportError } from '../core/backup';
 import { downloadFile, today } from '../core/download';
 import { LinkService } from '../core/link.service';
@@ -89,6 +91,28 @@ import { ZipImportPlan } from '../core/zip-backup';
         @if (done()) { <p class="meta" role="status">{{ done() }}</p> }
       </section>
 
+      <section class="card" aria-labelledby="adm-add">
+        <h3 id="adm-add">Ajouter un lien depuis un autre site</h3>
+        <p class="meta">
+          <strong>Sur ordinateur :</strong> glisse ce bouton dans ta barre de favoris. Sur n'importe quelle page, clique dessus : mes-liens s'ouvre avec l'adresse et le titre déjà remplis.
+        </p>
+        <div class="row">
+          <a class="btn primary-link" [href]="bookmarkletHref" (click)="$event.preventDefault()" draggable="true">+ mes-liens</a>
+          <button type="button" (click)="copyBookmarklet()">Copier le code du favori</button>
+        </div>
+        <p class="meta">Certains sites très stricts bloquent ce type de favori ; dans ce cas, copie l'adresse et colle-la dans le formulaire de l'accueil.</p>
+        <p class="meta">
+          <strong>Sur iPhone / iPad :</strong> iOS n'envoie pas les pages vers une application installée. Il faut un <em>Raccourci</em> (non testé sur iOS, les noms exacts des actions peuvent varier) :
+        </p>
+        <ol class="meta">
+          <li>App Raccourcis → « + » → nomme-le « Ajouter à mes-liens ». Dans ses réglages, active « Afficher dans la feuille de partage » et limite-le aux <em>URL</em> / pages Safari.</li>
+          <li>Action « Encoder l'URL » (ou « Encoder » du texte) appliquée à l'<em>Entrée du raccourci</em>.</li>
+          <li>Action « Texte » contenant <code>{{ shortcutPrefix }}</code> suivi du résultat encodé.</li>
+          <li>Action « Ouvrir les URL » appliquée à ce texte.</li>
+        </ol>
+        <p class="meta">Ensuite : dans Safari, Partager → « Ajouter à mes-liens ». La page s'ouvre dans Safari, le lien est enregistré sur le serveur et apparaît dans l'app installée à sa prochaine mise à jour.</p>
+      </section>
+
       <details class="card">
         <summary>Technique : sauvegarde JSON complète et connexion au serveur</summary>
         <h3>Sauvegarde JSON complète</h3>
@@ -158,6 +182,21 @@ export class AdminPage {
     const p = this.plan();
     return !p || (p.created.length + p.updated.length + p.deleted.length === 0 && !(this.deleteMissing() && p.missing.length));
   });
+
+  private readonly sanitizer = inject(DomSanitizer);
+  protected readonly shortcutPrefix = shortcutBase(window.location.origin);
+  private readonly bookmarklet = buildBookmarklet(window.location.origin);
+  /** Contenu 100 % généré par l'application (origine de la page + code fixe) : jamais de texte venant de l'extérieur. */
+  protected readonly bookmarkletHref: SafeUrl = this.sanitizer.bypassSecurityTrustUrl(this.bookmarklet);
+
+  protected async copyBookmarklet(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(this.bookmarklet);
+      this.flash('Code copié : crée un favori et colle-le dans le champ adresse (URL).');
+    } catch {
+      this.flash('Copie impossible sur cet appareil.');
+    }
+  }
 
   protected val(e: Event): string {
     return (e.target as HTMLInputElement).value;

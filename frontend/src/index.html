@@ -6,6 +6,14 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <!-- crossorigin="use-credentials" : le site est protégé par un identifiant ; sans cela le navigateur demande le manifeste sans identifiants (401) et l'installation échoue. -->
+  <link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">
+  <meta name="theme-color" content="#2557d6">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="mes-liens">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
 </head>
 <body>
   <app-root></app-root>
