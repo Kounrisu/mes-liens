@@ -12,12 +12,7 @@ import {
 } from '@angular/core';
 import { findSiteForUrl, sitesOf } from '../core/sites';
 import { sourceKey, sourcesOf } from '../core/sources';
-import {
-  YOUTUBE_CATEGORIES,
-  categoryCounts,
-  detectSource,
-  normalizeCategory,
-} from '../core/catalog';
+import { categorySuggestions, detectSource, normalizeCategory } from '../core/catalog';
 import { isImage, shrinkImage } from '../core/image';
 import { LinkService } from '../core/link.service';
 import { normalizeUrl, parseTags, tagCounts } from '../core/link-utils';
@@ -127,9 +122,7 @@ export class LinkForm implements OnInit {
     });
   }
 
-  protected readonly categories = computed(() => [
-    ...new Set([...categoryCounts(this.svc.links()).map((c) => c.category), ...YOUTUBE_CATEGORIES]),
-  ]);
+  protected readonly categories = computed(() => categorySuggestions(this.svc.links()));
   protected readonly knownTags = computed(() => tagCounts(this.svc.links()).map((t) => t.tag));
   protected readonly currentShot = computed(() => {
     const id = this.link()?.screenshotId;

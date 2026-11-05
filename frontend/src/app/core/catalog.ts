@@ -1,4 +1,19 @@
 import { Link } from './models';
+import { categoryPaths, categoryWithin } from './library';
+
+/** Ready-to-use learning topics. Stored paths remain stable in both interface languages. */
+export const LEARNING_SUBCATEGORIES = [
+  'typescript',
+  'angular',
+  'java',
+  'javascript',
+  'figma',
+  'web',
+  'react',
+  'css',
+  'security',
+  'devops',
+].map((topic) => `formation / ${topic}`);
 
 /** Catégories proposées d'office ; l'utilisateur peut en saisir d'autres librement (elles apparaissent alors dans le menu). */
 export const DEFAULT_CATEGORIES = [
@@ -20,6 +35,17 @@ export const YOUTUBE_CATEGORIES = [
   'japanese learning',
   'japanese bands',
 ] as const;
+
+export function categorySuggestions(links: readonly Link[]): string[] {
+  return [
+    ...new Set([
+      ...DEFAULT_CATEGORIES,
+      ...YOUTUBE_CATEGORIES,
+      ...LEARNING_SUBCATEGORIES,
+      ...categoryPaths(links),
+    ]),
+  ].sort((a, b) => a.localeCompare(b, 'fr'));
+}
 
 /** Libellé affiché pour une catégorie vide. */
 export const UNCATEGORIZED = 'non classé';
@@ -79,9 +105,18 @@ export function normalizeCategory(raw: string): string {
 }
 
 /** Catégories par défaut + celles réellement utilisées, avec le nombre de liens (les vides à 0 restent proposées). */
-export function categoryCounts(links: Link[]): { category: string; count: number }[] {
-  const counts = new Map<string, number>(DEFAULT_CATEGORIES.map((c) => [c, 0]));
-  for (const l of links) if (l.category) counts.set(l.category, (counts.get(l.category) ?? 0) + 1);
+export function categoryCounts(
+  links: Link[],
+  includeSuggestions = false,
+): { category: string; count: number }[] {
+  const counts = new Map<string, number>(
+    (includeSuggestions ? categorySuggestions(links) : DEFAULT_CATEGORIES).map((c) => [c, 0]),
+  );
+  for (const l of links) {
+    if (l.deletedAt !== null || !l.category) continue;
+    for (const category of categoryPaths([l]))
+      counts.set(category, (counts.get(category) ?? 0) + 1);
+  }
   const rest = [...counts].map(([category, count]) => ({ category, count }));
   const defaults = DEFAULT_CATEGORIES as readonly string[];
   return [
@@ -134,8 +169,8 @@ export function groupYoutube(links: readonly Link[]): {
   return {
     sections: YOUTUBE_CATEGORIES.map((category) => ({
       category,
-      links: yt.filter((l) => l.category === category),
+      links: yt.filter((l) => categoryWithin(l.category, category)),
     })),
-    others: yt.filter((l) => !wanted.includes(l.category)),
+    others: yt.filter((l) => !wanted.some((category) => categoryWithin(l.category, category))),
   };
 }

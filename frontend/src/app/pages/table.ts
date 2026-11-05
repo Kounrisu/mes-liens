@@ -3,6 +3,7 @@ import { Component, computed, inject, input, signal } from '@angular/core';
 import { UNCATEGORIZED, categoryCounts } from '../core/catalog';
 import { LinkService } from '../core/link.service';
 import { LinksTable } from '../shared/links-table';
+import { categoryWithin } from '../core/library';
 
 /** Tableau global : filtre par catégorie ; tri, recherche et actions sont dans le composant partagé. */
 @Component({
@@ -23,13 +24,13 @@ export class TablePage {
   protected readonly categoryFilter = computed(
     () => this.categoryOverride() ?? this.category() ?? '',
   );
-  protected readonly categories = computed(() => categoryCounts(this.svc.activeLinks()));
+  protected readonly categories = computed(() => categoryCounts(this.svc.activeLinks(), true));
 
   protected readonly rows = computed(() => {
     const cat = this.categoryFilter();
     return cat === ''
       ? this.svc.activeLinks()
-      : this.svc.activeLinks().filter((l) => l.category === (cat === '_' ? '' : cat));
+      : this.svc.activeLinks().filter((l) => categoryWithin(l.category, cat === '_' ? '' : cat));
   });
 
   protected val(e: Event): string {

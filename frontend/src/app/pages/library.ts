@@ -13,6 +13,7 @@ import { LinksTable } from '../shared/links-table';
 import { LinkList } from '../shared/link-list';
 import { tagCounts } from '../core/link-utils';
 import { InsightsService } from '../core/insights.service';
+import { categorySuggestions } from '../core/catalog';
 
 @Component({
   selector: 'app-library',
@@ -185,7 +186,7 @@ export class LibraryPage {
   readonly collection = signal('');
   readonly status = signal('');
   readonly cards = signal(false);
-  readonly categories = computed(() => categoryPaths(this.svc.links()));
+  readonly categories = computed(() => categorySuggestions(this.svc.links()));
   readonly collections = computed(() =>
     [...new Set(this.svc.links().flatMap((l) => libraryOf(l).collections))].sort(),
   );
@@ -238,7 +239,7 @@ export class LibraryPage {
   readonly message = signal('');
   readonly renameNames = computed(() =>
     this.renameKind() === 'category'
-      ? this.categories()
+      ? categoryPaths(this.svc.links())
       : tagCounts(this.svc.links()).map((t) => t.tag),
   );
   text(e: Event) {

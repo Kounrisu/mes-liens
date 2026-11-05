@@ -2,10 +2,14 @@
 import hashlib
 import json
 import subprocess
+import re
+import sys
 from pathlib import Path
 
 root = Path.home() / 'mes-liens'
-staged = root / 'releases/bilingual-v1/browser'
+release_name = sys.argv[1] if len(sys.argv) > 1 else 'bilingual-v1'
+assert re.fullmatch(r'[a-z][a-z0-9-]{0,63}', release_name)
+staged = root / 'releases' / release_name / 'browser'
 live = root / 'web/dist'
 for source in staged.rglob('*'):
     if source.is_file():

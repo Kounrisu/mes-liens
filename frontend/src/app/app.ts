@@ -28,7 +28,7 @@ export class App implements OnInit {
   protected readonly showOnboarding = computed(
     () => this.notConnected() && !this.sync.probing() && this.svc.ready() && this.svc.count() === 0,
   );
-  protected readonly categories = computed(() => categoryCounts(this.svc.links()));
+  protected readonly categories = computed(() => categoryCounts(this.svc.activeLinks()));
   protected readonly uncategorizedCount = computed(
     () => this.svc.links().filter((l) => !l.category).length,
   );

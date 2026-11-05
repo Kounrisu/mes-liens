@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { LinkService } from '../core/link.service';
 import { InsightsService } from '../core/insights.service';
-import { categoryPaths } from '../core/library';
+import { categorySuggestions } from '../core/catalog';
 import { parseTags, tagCounts } from '../core/link-utils';
 import { Link } from '../core/models';
 
@@ -55,7 +55,7 @@ export class SelectionToolbar {
   readonly value = signal('');
   readonly message = signal('');
   readonly error = signal('');
-  readonly categories = computed(() => categoryPaths(this.svc.links()));
+  readonly categories = computed(() => categorySuggestions(this.svc.links()));
   readonly tags = computed(() => tagCounts(this.svc.links()));
   readonly collections = computed(() =>
     [...new Set(this.svc.links().flatMap((l) => l.library?.collections ?? []))].sort(),

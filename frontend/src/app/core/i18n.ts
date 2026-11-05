@@ -91,6 +91,16 @@ export class CategoryLabelPipe implements PipeTransform {
   transform(value: string): string {
     const labels: Record<string, [string, string]> = {
       formation: ['formation', 'learning'],
+      typescript: ['TypeScript', 'TypeScript'],
+      angular: ['Angular', 'Angular'],
+      java: ['Java', 'Java'],
+      javascript: ['JavaScript', 'JavaScript'],
+      figma: ['Figma', 'Figma'],
+      web: ['Web', 'Web'],
+      react: ['React', 'React'],
+      css: ['CSS', 'CSS'],
+      security: ['sécurité', 'security'],
+      devops: ['DevOps', 'DevOps'],
       utile: ['utile', 'useful'],
       emploi: ['emploi', 'jobs'],
       veille: ['veille', 'research'],

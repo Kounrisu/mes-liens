@@ -2,7 +2,9 @@
 # Frontend-only release: the existing API and database format already support these changes.
 set -euo pipefail
 root="$HOME/mes-liens"
-release="$root/releases/bilingual-v1"
+release_name="${1:-bilingual-v1}"
+[[ "$release_name" =~ ^[a-z][a-z0-9-]{0,63}$ ]] || exit 2
+release="$root/releases/$release_name"
 test "$(realpath "$root")" = "$HOME/mes-liens"
 test -s "$release/browser/index.html"
 test -s "$release/browser/ngsw.json"
@@ -28,4 +30,4 @@ done
 test "$(curl -q -s -o /dev/null -w '%{http_code}' https://links.sn8w.com/api/links)" = 401
 touch "$release/deployed"
 trap - ERR
-echo 'Sources and bilingual interface deployed; routes and password protection verified.'
+echo 'Frontend deployed; routes and password protection verified.'
