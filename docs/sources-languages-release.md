@@ -19,3 +19,5 @@
 ## Livraison
 
 Cette version modifie uniquement le frontend ; aucune migration de base ni mise à jour de l'API n'est nécessaire. `infra/deploy-bilingual-release.sh` sauvegarde le serveur et l'ancien frontend, conserve les anciens fichiers hachés des PWA et vérifie les routes et l'authentification. `infra/verify-bilingual-release.py` compare tous les fichiers déployés et effectue des contrôles API en lecture seule, sans afficher de données personnelles.
+
+Déployé le 5 novembre 2026 à 20 h 32 (Paris) sur https://links.sn8w.com. Sauvegarde `2026-11-05-1932`, copie de restauration du frontend dans `releases/bilingual-v1/rollback`. Tous les fichiers déployés correspondent au build testé. Contrôle API réussi ; les pages Sources, Bibliothèque, Tableau et YouTube ainsi que l'API exigent toujours une authentification. Tag local : `v0.3.0-sources-languages` ; aucun push Git.
