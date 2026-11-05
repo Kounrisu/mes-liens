@@ -55,6 +55,11 @@ ssh <vps> 'docker exec caddy caddy reload   --config /etc/caddy/Caddyfile'
 ```
 *Modifie : ajoute un bloc au `~/proxy/Caddyfile` (copie datée faite avant). Le rechargement est gracieux : aucun site existant n'est coupé. Le montage de dossier n'est pas utilisé (il obligerait à recréer le conteneur Caddy). Annuler : restaurer la copie `Caddyfile.bak-…` puis `caddy reload`.*
 
+## Étape 5b — Accès automatique : le serveur fournit la clé (appliqué le 2026-11-05)
+`infra/gateway-key.sh` (exécuté sur le serveur : `ssh <vps> 'bash -s' < infra/gateway-key.sh`) modifie UNIQUEMENT le bloc `links.sn8w.com` du Caddyfile : ajoute `header_up X-Api-Token "<clé>"` devant l'API (la clé est lue dans `.env.prod`, jamais affichée) et `X-Robots-Tag: noindex`. Copie datée avant, contrôles avant écriture (exactement 2 ajouts), écriture en place (même fichier, sinon le conteneur Caddy ne voit pas le changement), `chmod 600` (le fichier contient la clé), `caddy validate`, restauration automatique si invalide, `caddy reload` sans coupure.
+Effet : le navigateur n'a aucun jeton ; l'app détecte l'accès automatique au premier lancement et se connecte seule. **Aucune authentification n'existe tant qu'on n'en ajoute pas une devant ce mécanisme** : quiconque atteint l'URL lit et modifie les liens. À traiter rapidement.
+Annuler : restaurer la dernière copie `~/proxy/Caddyfile.bak-…` (`cat copie > ~/proxy/Caddyfile`, pas `mv`) puis `caddy reload` : l'app retombe sur le guide de connexion manuelle (jeton).
+
 ## Étape 6 — Vérifier depuis ton PC
 ```bash
 curl -s -o /dev/null -w "PWA: %{http_code}\n"            https://links.sn8w.com/        # 200

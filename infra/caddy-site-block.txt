@@ -1,16 +1,25 @@
 # À AJOUTER à la fin de ~/proxy/Caddyfile sur le VPS (après en avoir fait une copie datée), puis recharger Caddy.
 # Prérequis : le DNS links.sn8w.com doit déjà pointer vers le VPS (sinon Let's Encrypt refuse le certificat).
+#
+# ACCÈS AUTOMATIQUE (décision du 2026-11-05) : la clé d'accès de l'API n'est PAS dans le navigateur. Le serveur l'ajoute lui-même
+# aux requêtes /api (header_up). La valeur réelle de MESLIENS_TOKEN est lue dans ~/mes-liens/.env.prod au moment de l'application
+# (voir infra/gateway-key.sh) : elle ne doit JAMAIS être écrite dans ce dépôt. Le Caddyfile du serveur est en mode 600 car il la contient.
+# Conséquence : tant qu'aucune authentification n'est placée DEVANT ce mécanisme, quiconque atteint l'URL a accès aux données.
+# Pour ajouter une authentification plus tard : insérer `basic_auth` (ou `forward_auth`) en tête de ce bloc.
 links.sn8w.com {
 	header {
 		Strict-Transport-Security "max-age=31536000"
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "no-referrer"
+		X-Robots-Tag "noindex, nofollow"
 	}
 	handle /api/* {
 		request_body {
 			max_size 8MB # l'API refuse de toute façon au-delà de 5 Mo (captures d'écran)
 		}
-		reverse_proxy mesliens-api:8080
+		reverse_proxy mesliens-api:8080 {
+			header_up X-Api-Token "<valeur de MESLIENS_TOKEN, lue sur le serveur>"
+		}
 	}
 	handle {
 		reverse_proxy mesliens-web:80
