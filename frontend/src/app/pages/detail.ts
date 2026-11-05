@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { LinkService } from '../core/link.service';
 import { LinkEvent } from '../core/models';
+import { FocusButton } from '../shared/focus-button';
 
 const EVENT_LABELS: Record<LinkEvent['type'], string> = {
   created: 'Lien enregistré',
@@ -16,7 +17,7 @@ const EVENT_LABELS: Record<LinkEvent['type'], string> = {
 /** Fiche d'un lien : toutes ses informations. Le site lui-même s'ouvre depuis le bouton « Aller au site ». */
 @Component({
   selector: 'app-detail',
-  imports: [DatePipe, RouterLink],
+  imports: [DatePipe, RouterLink, FocusButton],
   templateUrl: './detail.html',
 })
 export class DetailPage {

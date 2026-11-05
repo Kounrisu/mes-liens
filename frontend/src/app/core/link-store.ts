@@ -1,9 +1,11 @@
 import { DBSchema, IDBPDatabase, IDBPTransaction, StoreNames, openDB } from 'idb';
 import { Link, LinkEvent } from './models';
 
-/** Liens écrits avant l'existence des catégories : le champ manque dans IndexedDB. */
+/** Liens écrits avant l'existence des catégories / du focus : les champs manquent dans IndexedDB. */
 function withDefaults(l: Link): Link {
-  return l.category === undefined || l.source === undefined ? { ...l, category: l.category ?? '', source: l.source ?? '' } : l;
+  return l.category === undefined || l.source === undefined || l.focusRank === undefined
+    ? { ...l, category: l.category ?? '', source: l.source ?? '', focusRank: l.focusRank ?? null }
+    : l;
 }
 
 export type DirtyKind = 'link' | 'event' | 'screenshot';

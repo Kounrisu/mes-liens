@@ -1,0 +1,65 @@
+<main class="page">
+  <section aria-labelledby="focus-h">
+    <h2 id="focus-h">Focus</h2>
+
+    <ul class="tiles" aria-label="Aperçu">
+      <li class="tile"><strong>{{ ranked().length }}</strong><span>en focus</span></li>
+      <li class="tile"><strong>{{ svc.count() }}</strong><span>liens au total</span></li>
+      <li class="tile"><strong>{{ addedThisWeek() }}</strong><span>ajoutés cette semaine</span></li>
+      @for (c of topCategories(); track c.category) {
+        <li class="tile"><a [routerLink]="['/category', c.category]"><strong>{{ c.count }}</strong><span>{{ c.category }}</span></a></li>
+      }
+      @if (uncategorized()) {
+        <li class="tile"><a [routerLink]="['/category', '_']"><strong>{{ uncategorized() }}</strong><span>{{ uncategorizedLabel }}</span></a></li>
+      }
+    </ul>
+  </section>
+
+  <section aria-labelledby="ranked-h">
+    <h2 id="ranked-h">À apprendre en priorité</h2>
+    @if (!svc.ready()) {
+      <p>Chargement…</p>
+    } @else if (ranked().length === 0) {
+      <p class="empty">Ton focus est vide. Utilise le bouton « ☆ Focus » sur un lien (liste, tableau ou fiche), ou choisis parmi les suggestions ci-dessous. Le premier du classement est le rang 1.</p>
+    }
+    <ol class="ranked">
+      @for (l of ranked(); track l.id; let i = $index; let first = $first; let last = $last) {
+        <li class="card rank-item">
+          <span class="rank" aria-hidden="true">{{ i + 1 }}</span>
+          @if (l.screenshotId && svc.screenshotUrls()[l.screenshotId]; as src) {
+            <img class="rank-thumb" [src]="src" alt="" loading="lazy" />
+          }
+          <div class="rank-body">
+            <h3><span class="sr-only">Rang {{ i + 1 }} : </span><a [routerLink]="['/link', l.id]">{{ l.title }}</a></h3>
+            <p class="meta">
+              {{ l.source || l.domain }} · ajouté le {{ l.createdAt | date: 'dd/MM/yyyy' }}
+              @if (l.category) { · <a class="badge cat" [routerLink]="['/category', l.category]">{{ l.category }}</a> }
+            </p>
+            @if (l.note) { <p class="note">{{ l.note }}</p> }
+            <div class="row">
+              <a class="btn small" [href]="l.url" target="_blank" rel="noopener noreferrer">Aller au site ↗</a>
+              <button type="button" class="btn small" [disabled]="first" (click)="up(l)" [attr.aria-label]="'Monter ' + l.title + ' au rang ' + i">↑ Monter</button>
+              <button type="button" class="btn small" [disabled]="last" (click)="down(l)" [attr.aria-label]="'Descendre ' + l.title + ' au rang ' + (i + 2)">↓ Descendre</button>
+              <button type="button" class="ghost danger small" (click)="remove(l)" [attr.aria-label]="'Retirer du focus : ' + l.title">Retirer</button>
+            </div>
+          </div>
+        </li>
+      }
+    </ol>
+  </section>
+
+  @if (suggestions().length) {
+    <section aria-labelledby="sugg-h">
+      <h2 id="sugg-h">Derniers liens, hors focus</h2>
+      <ul class="suggest">
+        @for (l of suggestions(); track l.id) {
+          <li class="card row">
+            <a [routerLink]="['/link', l.id]" style="flex:1; overflow-wrap:anywhere">{{ l.title }}</a>
+            <span class="meta">{{ l.source || l.domain }}</span>
+            <app-focus-button [link]="l" />
+          </li>
+        }
+      </ul>
+    </section>
+  }
+</main>

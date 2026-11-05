@@ -24,7 +24,7 @@ describe('isoMs', () => {
 });
 
 describe('HttpSyncApi', () => {
-  const link = { id: 'a', url: 'https://x.io', title: 't', domain: 'x.io', tags: [], note: '', screenshotId: null, category: '', source: '', createdAt: '2026-11-05T10:00:00Z', updatedAt: '2026-11-05T10:00:00.5Z', deletedAt: null };
+  const link = { id: 'a', url: 'https://x.io', title: 't', domain: 'x.io', tags: [], note: '', screenshotId: null, category: '', source: '', focusRank: null, createdAt: '2026-11-05T10:00:00Z', updatedAt: '2026-11-05T10:00:00.5Z', deletedAt: null };
 
   it('envoie le jeton en en-tête et normalise les dates reçues', async () => {
     let seen: Headers | undefined;

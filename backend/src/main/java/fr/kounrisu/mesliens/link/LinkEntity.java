@@ -41,6 +41,9 @@ public class LinkEntity {
     @Column(nullable = false)
     private String source;
 
+    @Column(name = "focus_rank")
+    private Integer focusRank;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -73,6 +76,7 @@ public class LinkEntity {
         this.screenshotId = d.screenshotId();
         this.category = d.category();
         this.source = d.source();
+        this.focusRank = d.focusRank();
         this.createdAt = d.createdAt();
         this.updatedAt = d.updatedAt();
         this.deletedAt = d.deletedAt();
@@ -84,7 +88,7 @@ public class LinkEntity {
     }
 
     public LinkDto toDto() {
-        return new LinkDto(id, url, title, domain, java.util.List.of(tags), note, screenshotId, category, source, createdAt, updatedAt, deletedAt);
+        return new LinkDto(id, url, title, domain, java.util.List.of(tags), note, screenshotId, category, source, focusRank, createdAt, updatedAt, deletedAt);
     }
 
     public Long getServerSeq() { return serverSeq; }

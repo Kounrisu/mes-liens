@@ -14,7 +14,7 @@ const URL_ = env['SYNC_E2E_URL'];
 const TOKEN = env['SYNC_E2E_TOKEN'] ?? '';
 
 const mk = (title: string, min: number, over: Partial<Link> = {}): Link => ({
-  id: crypto.randomUUID(), url: 'https://example.com/' + title, title, domain: 'example.com', tags: ['e2e'], note: '', screenshotId: null, category: '', source: '',
+  id: crypto.randomUUID(), url: 'https://example.com/' + title, title, domain: 'example.com', tags: ['e2e'], note: '', screenshotId: null, category: '', source: '', focusRank: null,
   createdAt: new Date(Date.UTC(2026, 10, 5, 10, min)).toISOString(), updatedAt: new Date(Date.UTC(2026, 10, 5, 10, min)).toISOString(), deletedAt: null, ...over,
 });
 

@@ -96,6 +96,23 @@ class ApiIntegrationTests {
     }
 
     @Test
+    void rangDeFocus_conserve_nullParDefaut_etBornes() throws Exception {
+        UUID id = UUID.randomUUID();
+        String json = link(id, "focus", "2026-11-01T10:00:00Z", null).replace("\"screenshotId\":null,", "\"screenshotId\":null,\"focusRank\":2,");
+        mvc.perform(authed(put("/api/links/" + id)).contentType(MediaType.APPLICATION_JSON).content(json))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.focusRank").value(2));
+        // retiré du focus : null
+        mvc.perform(authed(put("/api/links/" + id)).contentType(MediaType.APPLICATION_JSON).content(link(id, "focus", "2026-11-02T10:00:00Z", null)))
+                .andExpect(jsonPath("$.focusRank").doesNotExist());
+        for (String bad : new String[] {"0", "-3", "100001"}) {
+            UUID b = UUID.randomUUID();
+            mvc.perform(authed(put("/api/links/" + b)).contentType(MediaType.APPLICATION_JSON)
+                            .content(link(b, "x", "2026-11-01T10:00:00Z", null).replace("\"screenshotId\":null,", "\"screenshotId\":null,\"focusRank\":" + bad + ",")))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Test
     void leplusRecentGagne_ancienIgnore_recentRemplace() throws Exception {
         UUID id = UUID.randomUUID();
         seed(id, link(id, "v2", "2026-11-02T10:00:00Z", null));

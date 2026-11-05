@@ -81,6 +81,7 @@ function validateLink(v: unknown, i: number): Link {
     // Absents des exports faits avant l'existence des catégories : chaîne vide.
     category: optString(v, 'category', where),
     source: optString(v, 'source', where),
+    focusRank: optRank(v, where),
     createdAt: date('createdAt'),
     updatedAt: date('updatedAt'),
     deletedAt: deletedAt as string | null,
@@ -116,6 +117,13 @@ function optString(o: Record<string, unknown>, key: string, where: string): stri
   const v = o[key];
   if (v === undefined || v === null) return '';
   if (typeof v !== 'string') throw new ImportError(`${where} : « ${key} » invalide.`);
+  return v;
+}
+
+function optRank(o: Record<string, unknown>, where: string): number | null {
+  const v = o['focusRank'];
+  if (v === undefined || v === null) return null;
+  if (typeof v !== 'number' || !Number.isInteger(v) || v < 1) throw new ImportError(where + ' : « focusRank » doit être un entier positif.');
   return v;
 }
 

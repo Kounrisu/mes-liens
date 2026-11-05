@@ -64,3 +64,12 @@
 - Le critère « YouTube » se base sur l'URL, pas sur la source saisie (testé : `notyoutube.com`, `youtube.com.evil.example` rejetés).
 - Limite : une vidéo ne peut avoir qu'une catégorie. Une vidéo « music » + « korean bands » doit choisir l'une des deux (les étiquettes libres, elles, sont multiples).
 - Tests : 61 (front).
+
+## 2026-11-05 — Page Focus (tableau de bord des favoris à apprendre)
+- Demande : une page « focus » façon dashboard avec des liens favoris à apprendre, avec des rangs. Interprétation retenue : une liste ORDONNÉE (rang 1 = priorité n°1) que tu composes avec le bouton « ☆ Focus » (cartes, tableau, fiche) et réordonnes avec « Monter / Descendre ». Dis-moi si tu pensais à autre chose (ex. niveaux de maîtrise, progression, échéances).
+- Modèle : `Link.focusRank` (entier ≥ 1, `null` = hors focus). API : migration V4 (colonne nullable, validation 1..100000). Anciens clients / exports / liens locaux sans le champ : `null`.
+- **Point délicat — rangs en double.** Deux appareils hors ligne peuvent tous deux ajouter un favori en « dernière position » → deux liens au même rang. L'ordre d'affichage est donc un ordre total (rang, puis date de création, puis id) identique sur tous les appareils ; la position affichée est l'index + 1, pas la valeur brute. Chaque action (ajouter, retirer, monter, descendre) renumérote 1..n et n'écrit que les liens dont le rang change (logique pure testée : `core/focus.ts`).
+- Chaque lien dont le rang change est remplacé en entier avec un `updatedAt` strictement plus récent (garde-fou : deux changements dans la même milliseconde n'ont jamais la même date) et marqué à pousser. Conséquence à connaître : réordonner le focus « touche » plusieurs liens, et si deux appareils réordonnent en même temps hors ligne, le plus récent gagne lien par lien — le classement peut alors être un mélange ; il reste valide (renuméroté au prochain mouvement).
+- Le tableau de bord montre : nombre en focus, total, ajoutés cette semaine, principales catégories (cliquables), puis le classement, puis 6 suggestions (derniers liens hors focus) avec bouton ☆.
+- Pas d'événement de journal pour le focus (les 6 types du cahier des charges sont inchangés).
+- Tests : API 25 ; front 76. Vérifié dans le navigateur : mise en focus depuis le tableau, classement, descente d'un rang, compteur dans le menu.

@@ -24,6 +24,7 @@ export class App implements OnInit {
   protected readonly categories = computed(() => categoryCounts(this.svc.links()));
   protected readonly uncategorizedCount = computed(() => this.svc.links().filter((l) => !l.category).length);
   protected readonly uncategorizedLabel = UNCATEGORIZED;
+  protected readonly focusCount = computed(() => this.svc.links().filter((l) => l.focusRank !== null).length);
 
   async ngOnInit(): Promise<void> {
     await this.svc.init();

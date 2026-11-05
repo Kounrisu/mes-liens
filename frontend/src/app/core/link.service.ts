@@ -2,6 +2,7 @@ import { Injectable, computed, signal } from '@angular/core';
 import { ImportError, exportToJson, importFromJson } from './backup';
 import { LinkStore } from './link-store';
 import { detectSource, normalizeCategory } from './catalog';
+import { planAdd, planMove, planRemove } from './focus';
 import { domainOf } from './link-utils';
 import { Link, LinkEvent } from './models';
 
@@ -69,6 +70,7 @@ export class LinkService {
       screenshotId,
       category: normalizeCategory(n.category) || detected?.category || '',
       source: n.source.trim() || detected?.source || '',
+      focusRank: null,
       createdAt: now,
       updatedAt: now,
       deletedAt: null,
@@ -109,7 +111,7 @@ export class LinkService {
       screenshotId,
       category: normalizeCategory(f.category),
       source: f.source.trim(),
-      updatedAt: now,
+      updatedAt: this.stampAfter(before.updatedAt),
     };
     await store.putLink(after);
 
@@ -120,6 +122,38 @@ export class LinkService {
 
     await this.afterLocalChange();
     return after;
+  }
+
+  // ---- page Focus ----
+
+  async addToFocus(id: string): Promise<void> {
+    await this.applyRanks(planAdd(this.links(), id));
+  }
+
+  async removeFromFocus(id: string): Promise<void> {
+    await this.applyRanks(planRemove(this.links(), id));
+  }
+
+  async moveInFocus(id: string, delta: -1 | 1): Promise<void> {
+    await this.applyRanks(planMove(this.links(), id, delta));
+  }
+
+  /** Écrit les nouveaux rangs. Chaque lien modifié est remplacé en entier avec un updatedAt strictement plus récent (le plus récent gagne). */
+  private async applyRanks(changes: Map<string, number | null>): Promise<void> {
+    if (!changes.size) return;
+    const store = this.need();
+    for (const [id, rank] of changes) {
+      const l = await store.getLink(id);
+      if (!l || l.deletedAt !== null) continue;
+      await store.putLink({ ...l, focusRank: rank, updatedAt: this.stampAfter(l.updatedAt) });
+    }
+    await this.afterLocalChange();
+  }
+
+  /** « Maintenant », mais toujours strictement après previous : deux modifications dans la même milliseconde ne doivent pas avoir le même updatedAt. */
+  private stampAfter(previous: string): string {
+    const now = Date.now();
+    return new Date(Math.max(now, Date.parse(previous) + 1)).toISOString();
   }
 
   async remove(id: string): Promise<void> {

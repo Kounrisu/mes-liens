@@ -12,7 +12,7 @@ const link = (id: string, over: Partial<Link> = {}): Link => ({
   domain: 'example.com',
   tags: ['angular', 'veille'],
   note: 'à relire',
-  screenshotId: null, category: '', source: '',
+  screenshotId: null, category: '', source: '', focusRank: null,
   createdAt: '2026-11-01T10:00:00.000Z',
   updatedAt: '2026-11-01T10:00:00.000Z',
   deletedAt: null,
@@ -97,8 +97,8 @@ describe('migration de la base', () => {
     const migrated = await LinkStore.open(name);
     expect((await migrated.listDirty()).map((d) => d.key).sort()).toEqual(['event:e-ancien', 'link:ancien']);
     expect((await migrated.getLink('ancien'))?.title).toBe('Titre ancien'); // données intactes
-    expect(await migrated.getLink('ancien')).toMatchObject({ category: '', source: '' }); // champs manquants complétés
-    expect((await migrated.listLinks())[0]).toMatchObject({ category: '', source: '' });
+    expect(await migrated.getLink('ancien')).toMatchObject({ category: '', source: '', focusRank: null }); // champs manquants complétés
+    expect((await migrated.listLinks())[0]).toMatchObject({ category: '', source: '', focusRank: null });
     migrated.close();
   });
 });

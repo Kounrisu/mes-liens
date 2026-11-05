@@ -5,6 +5,7 @@ import { SortDir, SortKey, UNCATEGORIZED, categoryCounts, sortLinks } from '../c
 import { LinkService } from '../core/link.service';
 import { filterLinks } from '../core/link-utils';
 import { Link } from '../core/models';
+import { FocusButton } from '../shared/focus-button';
 
 interface Column {
   key: SortKey;
@@ -14,7 +15,7 @@ interface Column {
 /** Tableau global : tri sur chaque colonne, recherche, filtre par catégorie, et actions (ouvrir, modifier, supprimer). */
 @Component({
   selector: 'app-table',
-  imports: [DatePipe, RouterLink],
+  imports: [DatePipe, RouterLink, FocusButton],
   templateUrl: './table.html',
 })
 export class TablePage {

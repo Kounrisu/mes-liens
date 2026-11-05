@@ -4,11 +4,12 @@ import { RouterLink } from '@angular/router';
 import { LinkService } from '../core/link.service';
 import { filterLinks, tagCounts } from '../core/link-utils';
 import { Link } from '../core/models';
+import { FocusButton } from './focus-button';
 
 /** Liste en cartes avec recherche et filtre par étiquettes. Utilisée par l'accueil et les pages de catégorie. */
 @Component({
   selector: 'app-link-list',
-  imports: [DatePipe, RouterLink],
+  imports: [DatePipe, RouterLink, FocusButton],
   templateUrl: './link-list.html',
 })
 export class LinkList {

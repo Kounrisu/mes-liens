@@ -36,6 +36,62 @@ describe('LinkService.add', () => {
   });
 });
 
+describe('LinkService — focus', () => {
+  const rank = (id: string) => svc.find(id)?.focusRank;
+
+  it('ajoute en dernière position, monte, descend, retire et referme les trous', async () => {
+    const a = await svc.add(fields({ url: 'https://a.example/x' }));
+    const b = await svc.add(fields({ url: 'https://b.example/x' }));
+    const c = await svc.add(fields({ url: 'https://c.example/x' }));
+    expect(rank(a.id)).toBeNull(); // un nouveau lien n'est pas dans le focus
+    for (const l of [a, b, c]) await svc.addToFocus(l.id);
+    expect([rank(a.id), rank(b.id), rank(c.id)]).toEqual([1, 2, 3]);
+
+    await svc.moveInFocus(c.id, -1);
+    expect([rank(a.id), rank(c.id), rank(b.id)]).toEqual([1, 2, 3]);
+    await svc.moveInFocus(a.id, -1); // déjà en tête : sans effet
+    expect(rank(a.id)).toBe(1);
+
+    await svc.removeFromFocus(a.id);
+    expect(rank(a.id)).toBeNull();
+    expect([rank(c.id), rank(b.id)]).toEqual([1, 2]);
+  });
+
+  it('chaque lien modifié reçoit un updatedAt strictement plus récent et est marqué à pousser', async () => {
+    const a = await svc.add(fields({ url: 'https://a.example/x' }));
+    const b = await svc.add(fields({ url: 'https://b.example/x' }));
+    await svc.addToFocus(a.id);
+    await svc.addToFocus(b.id);
+    const before = { a: svc.find(a.id)!.updatedAt, b: svc.find(b.id)!.updatedAt };
+    await svc.moveInFocus(b.id, -1); // modifie a ET b dans la même milliseconde
+    expect(svc.find(a.id)!.updatedAt > before.a).toBe(true);
+    expect(svc.find(b.id)!.updatedAt > before.b).toBe(true);
+    const dirty = (await svc.storage.listDirty()).map((d) => d.key);
+    expect(dirty).toContain(`link:${a.id}`);
+    expect(dirty).toContain(`link:${b.id}`);
+  });
+
+  it('modifier un lien (update) conserve son rang de focus', async () => {
+    const a = await svc.add(fields());
+    await svc.addToFocus(a.id);
+    await svc.update(a.id, { ...fields(), title: 'Autre titre' });
+    expect(rank(a.id)).toBe(1);
+  });
+
+  it('un lien supprimé quitte le focus affiché et laisse les autres numérotés proprement au prochain mouvement', async () => {
+    const a = await svc.add(fields({ url: 'https://a.example/x' }));
+    const b = await svc.add(fields({ url: 'https://b.example/x' }));
+    await svc.addToFocus(a.id);
+    await svc.addToFocus(b.id);
+    await svc.remove(a.id);
+    await svc.removeFromFocus(a.id); // lien supprimé : ignoré sans erreur
+    await svc.moveInFocus(b.id, -1);
+    expect(rank(b.id)).toBe(2); // rang brut inchangé…
+    await svc.addToFocus(b.id); // …et déjà dans le focus : rien
+    expect(rank(b.id)).toBe(2);
+  });
+});
+
 describe('LinkService.update', () => {
   it('modifie tous les champs, avance updatedAt, garde id et createdAt', async () => {
     const l = await svc.add(fields());

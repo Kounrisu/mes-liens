@@ -11,6 +11,8 @@ export interface Link {
   category: string;
   /** Site d'origine (Udemy, Frontend Masters…). Détecté depuis l'URL, modifiable. */
   source: string;
+  /** Position dans la page Focus (1 = en tête). null = pas dans le focus. Deux appareils peuvent attribuer le même rang : l'ordre affiché départage. */
+  focusRank: number | null;
   createdAt: string;
   updatedAt: string;
   /** Tombstone : non nul = lien supprimé (conservé pour la synchronisation). */

@@ -30,7 +30,7 @@ export function isoMs(s: string): string {
 }
 
 export function normalizeLink(l: Link): Link {
-  return { ...l, category: l.category ?? '', source: l.source ?? '', createdAt: isoMs(l.createdAt), updatedAt: isoMs(l.updatedAt), deletedAt: l.deletedAt === null ? null : isoMs(l.deletedAt) };
+  return { ...l, category: l.category ?? '', source: l.source ?? '', focusRank: l.focusRank ?? null, createdAt: isoMs(l.createdAt), updatedAt: isoMs(l.updatedAt), deletedAt: l.deletedAt === null ? null : isoMs(l.deletedAt) };
 }
 
 export function normalizeEvent(e: LinkEvent): LinkEvent {
