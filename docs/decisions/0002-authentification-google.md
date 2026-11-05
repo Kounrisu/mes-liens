@@ -1,6 +1,6 @@
 # 0002 — Authentification : connexion Google, une seule adresse autorisée
 
-Statut : **préparé et testé en local, NON appliqué sur le serveur** (il manque les identifiants Google, à créer par l'utilisateur).
+Statut : **préparé et testé en local, NON appliqué** (en attente : Google Cloud exige la validation en deux étapes sur le compte de l'utilisateur ; il a choisi en attendant un mot de passe simple, voir 0003). Reste disponible pour plus tard.
 Ce document ne contient aucun identifiant, secret ni adresse e-mail (le dépôt est public).
 
 ## Contexte et décision

@@ -1,0 +1,32 @@
+# Bloc links.sn8w.com AVEC identifiant + mot de passe (basic_auth de Caddy). Remplace le bloc « accès automatique sans connexion ».
+# Appliqué par infra/enable-basic-auth.sh, qui remplace les trois marqueurs entre chevrons des lignes de configuration (jamais ceux des commentaires) :
+#   le nom         = identifiant choisi par l'utilisateur
+#   le hash        = hash bcrypt du mot de passe (le mot de passe lui-même n'est écrit nulle part)
+#   la clé de l'API = valeur de MESLIENS_TOKEN lue dans ~/mes-liens/.env.prod (jamais dans ce dépôt)
+# basic_auth s'applique à tout le site (page ET API). L'en-tête Authorization est retiré avant de transmettre aux conteneurs :
+# ni l'API ni le serveur de la PWA ne voient jamais le mot de passe. La clé de l'API est ajoutée par le serveur.
+links.sn8w.com {
+	basic_auth {
+		<NOM> <HASH>
+	}
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		X-Robots-Tag "noindex, nofollow"
+	}
+	handle /api/* {
+		request_body {
+			max_size 8MB # l'API refuse de toute façon au-delà de 5 Mo (captures d'écran)
+		}
+		reverse_proxy mesliens-api:8080 {
+			header_up -Authorization
+			header_up X-Api-Token "<CLE>"
+		}
+	}
+	handle {
+		reverse_proxy mesliens-web:80 {
+			header_up -Authorization
+		}
+	}
+}

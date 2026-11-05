@@ -62,7 +62,7 @@ export class App implements OnInit {
     }
   }
 
-  /** Session Google expirée : recharger la page renvoie vers la connexion (Caddy redirige toute navigation non connectée). */
+  /** Accès refusé : recharger la page fait réapparaître la demande d'identifiant du navigateur. */
   protected reconnect(): void {
     window.location.reload();
   }
@@ -73,7 +73,7 @@ export class App implements OnInit {
       case 'syncing': return 'Synchronisation…';
       case 'idle': return this.sync.pendingCount() ? `${this.sync.pendingCount()} à envoyer` : 'Synchronisé';
       case 'offline': return 'Hors ligne';
-      case 'auth-error': return this.sync.gateway() ? 'Session expirée' : 'Jeton refusé';
+      case 'auth-error': return this.sync.gateway() ? 'Reconnexion requise' : 'Jeton refusé';
       default: return 'Erreur de synchro';
     }
   }

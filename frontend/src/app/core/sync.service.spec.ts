@@ -26,7 +26,7 @@ describe('SyncService — session expirée en accès automatique', () => {
     await sync.syncNow();
     spy.mockRestore();
     expect(sync.status()).toBe('auth-error');
-    expect(sync.message()).toMatch(/session a expiré/);
+    expect(sync.message()).toMatch(/reconnecter/);
     expect(sync.message()).not.toMatch(/jeton/i);
   });
 });

@@ -130,7 +130,7 @@ export class SyncService {
         this.status.set('auth-error');
         this.message.set(
           this.gateway()
-            ? 'Ta session a expiré : recharge la page pour te reconnecter avec Google. Tes modifications sont conservées et seront envoyées ensuite.'
+            ? 'Le serveur demande de te reconnecter : recharge la page et saisis ton identifiant. Tes modifications sont conservées et seront envoyées ensuite.'
             : 'Jeton refusé par le serveur. Vérifie-le puis reconnecte-toi.',
         );
       } else if (e instanceof SyncNetworkError) {

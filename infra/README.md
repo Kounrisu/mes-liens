@@ -60,7 +60,14 @@ ssh <vps> 'docker exec caddy caddy reload   --config /etc/caddy/Caddyfile'
 Effet : le navigateur n'a aucun jeton ; l'app détecte l'accès automatique au premier lancement et se connecte seule. **Aucune authentification n'existe tant qu'on n'en ajoute pas une devant ce mécanisme** : quiconque atteint l'URL lit et modifie les liens. À traiter rapidement.
 Annuler : restaurer la dernière copie `~/proxy/Caddyfile.bak-…` (`cat copie > ~/proxy/Caddyfile`, pas `mv`) puis `caddy reload` : l'app retombe sur le guide de connexion manuelle (jeton).
 
-## Étape 5c — Connexion Google (préparée, à appliquer après création des identifiants Google)
+## Étape 5d — Identifiant + mot de passe (APPLIQUÉ le 2026-11-05, voir `docs/decisions/0003-authentification-mot-de-passe.md`)
+```bash
+scp infra/enable-basic-auth.sh infra/caddy-site-block.basic.txt <vps>:~/mes-liens/
+printf '%s' 'LE-MOT-DE-PASSE' | ssh <vps> 'bash ~/mes-liens/enable-basic-auth.sh <identifiant>'   # installe OU change le mot de passe
+```
+Le mot de passe passe par l'entrée standard et n'est écrit nulle part en clair (seul son hash bcrypt est dans le Caddyfile du serveur, mode 600). Annuler : restaurer la dernière copie `~/proxy/Caddyfile.bak-…`.
+
+## Étape 5c — Connexion Google (préparée, non appliquée : voir 0002, à appliquer après création des identifiants Google)
 Décision et vérifications : [`docs/decisions/0002-authentification-google.md`](../docs/decisions/0002-authentification-google.md). Ordre :
 ```bash
 # 1. (toi, chez Google) créer l'ID client OAuth — voir la décision 0002
