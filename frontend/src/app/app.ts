@@ -24,7 +24,7 @@ export class App implements OnInit {
 
   protected readonly notConnected = computed(() => this.sync.status() === 'unconfigured');
   /** Appareil neuf : ni connexion au serveur, ni aucun lien local → on guide l'utilisateur au lieu d'afficher une page vide muette. */
-  protected readonly showOnboarding = computed(() => this.notConnected() && this.svc.ready() && this.svc.count() === 0);
+  protected readonly showOnboarding = computed(() => this.notConnected() && !this.sync.probing() && this.svc.ready() && this.svc.count() === 0);
   protected readonly categories = computed(() => categoryCounts(this.svc.links()));
   protected readonly uncategorizedCount = computed(() => this.svc.links().filter((l) => !l.category).length);
   protected readonly uncategorizedLabel = UNCATEGORIZED;

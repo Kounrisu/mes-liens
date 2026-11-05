@@ -151,3 +151,11 @@
 - Build sur le PC, copie dans un dossier temporaire du VPS (`web/dist.new`), puis remplacement EN PLACE des fichiers de `web/dist` (le conteneur lit ce dossier via un montage de dossier : un `mv` du dossier aurait laissé le conteneur sur l'ancien contenu), retrait des seuls anciens fichiers hachés, suppression du dossier temporaire. Aucun redémarrage, aucune modification de configuration.
 - Vérifié : le nouveau `main-*.js` est servi et contient le nouvel écran ; `/` et `/table` 200 ; API sans jeton 401 ; les 6 autres sites 200.
 - Jeton remis dans le presse-papiers de l'utilisateur (jamais affiché) pour la première connexion ; à vider ensuite.
+
+## 2026-11-05 — Accès automatique (aucune clé à saisir dans le navigateur) — côté app préparé, serveur NON modifié
+- Demande : l'app doit être « déjà connectée » à la base, sans clé à saisir ; l'authentification viendra plus tard.
+- Conception : la clé reste côté serveur ; le serveur l'ajoute lui-même aux requêtes de l'app vers l'API (en-tête `X-Api-Token` posé par la passerelle Caddy). Le navigateur n'a aucun jeton. Quand l'authentification sera ajoutée, elle se place devant ce mécanisme (quelques lignes dans le même bloc Caddy) sans rien changer à l'app.
+- Côté app : au premier lancement, si l'app est servie en HTTPS par son propre serveur, elle demande une fois à ce serveur si l'API répond SANS jeton (requête minuscule, `since` géant : aucune donnée tirée). 200 → configuration `{serverUrl: origine, token: ''}` et synchro automatique ; 401 → le guide de connexion manuelle reste affiché ; injoignable → guide manuel, nouvel essai à la prochaine ouverture. Jeton vide = aucun en-tête d'authentification envoyé. En développement local / HTTP : jamais de sonde.
+- Tests : 99 passent (4 pour la sonde, 1 pour l'en-tête absent).
+- **Risque à retenir (décision utilisateur : authentification plus tard)** : tant que rien n'authentifie l'accès, toute personne qui connaît ou trouve l'adresse peut lire et modifier les liens. L'adresse n'est pas publiée, mais les noms de domaine des certificats HTTPS sont listés publiquement (Certificate Transparency) et des robots les parcourent. Atténuations prévues : `X-Robots-Tag: noindex`. À traiter en priorité dès que possible.
+- Non appliqué : modification du Caddyfile du serveur et redéploiement du front (en attente d'accord).

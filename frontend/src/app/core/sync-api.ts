@@ -93,7 +93,8 @@ export class HttpSyncApi implements SyncApi {
     try {
       res = await this.fetchFn(this.base + path, {
         ...init,
-        headers: { ...(init.headers as Record<string, string>), 'X-Api-Token': this.token },
+        // Jeton vide = le serveur ajoute lui-même la clé (accès automatique) : on n'envoie alors aucun en-tête d'authentification.
+        headers: { ...(init.headers as Record<string, string>), ...(this.token ? { 'X-Api-Token': this.token } : {}) },
         signal: AbortSignal.timeout(this.timeoutMs),
         cache: 'no-store',
       });

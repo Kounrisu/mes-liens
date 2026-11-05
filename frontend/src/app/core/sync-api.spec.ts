@@ -48,6 +48,16 @@ describe('HttpSyncApi', () => {
     expect(r.events[0].at).toBe('2026-11-05T10:00:00.000Z');
   });
 
+  it('jeton vide (accès automatique par le serveur) : aucun en-tête d’authentification n’est envoyé', async () => {
+    let seen: Headers | undefined;
+    const api = new HttpSyncApi('https://s.example', '', async (_u, init) => {
+      seen = new Headers(init?.headers);
+      return json({ cursor: 0, head: 0, links: [], events: [] });
+    });
+    await api.pull(0);
+    expect(seen?.has('X-Api-Token')).toBe(false);
+  });
+
   it('classe les erreurs : auth, réseau (coupure, 5xx, 429), refus d’un élément (4xx), capture absente', async () => {
     const mk = (f: typeof fetch) => new HttpSyncApi('https://s.example', 't', f);
     await expect(mk(async () => json({}, 401)).pull(0)).rejects.toBeInstanceOf(SyncAuthError);

@@ -48,10 +48,14 @@
         <input type="text" inputmode="url" autocomplete="off" placeholder="https://liens.example.com"
                [value]="cfgUrl()" (input)="cfgUrl.set(val($event))" />
       </label>
+      @if (sync.gateway()) {
+        <p class="meta">Cet appareil est connecté automatiquement par le serveur : aucun jeton à saisir.</p>
+      } @else {
       <label>Jeton <small>(32 caractères minimum, stocké uniquement sur cet appareil)</small>
         <input type="password" autocomplete="off" [value]="cfgToken()" (input)="cfgToken.set(val($event))"
                [placeholder]="sync.status() === 'unconfigured' ? '' : '•••••••• (déjà enregistré)'" />
       </label>
+      }
       @if (cfgError()) { <p class="error" role="alert">{{ cfgError() }}</p> }
       @if (sync.message()) { <p class="meta" role="status">{{ sync.message() }}</p> }
       @if (sync.lastSyncAt()) { <p class="meta">Dernière synchro : {{ sync.lastSyncAt() | date: 'dd/MM/yyyy HH:mm:ss' }}</p> }
