@@ -44,6 +44,28 @@ services:
     networks: [internal, web] # internal : vers la base ; web : pour que Caddy joigne l'API
     mem_limit: 400m
 
+  previews:
+    image: mesliens-previews:learning-v1
+    container_name: mesliens-previews
+    restart: unless-stopped
+    init: true
+    depends_on: [api]
+    environment:
+      API_URL: http://mesliens-api:8080
+      MESLIENS_TOKEN: ${MESLIENS_TOKEN:?}
+      CHECK_INTERVAL_MS: "45000"
+      BLOCKED_IPS: ${MESLIENS_BLOCKED_IPS:-}
+    networks: [web]
+    mem_limit: 512m
+    cpus: 0.5
+    pids_limit: 128
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    read_only: true
+    tmpfs:
+      - /tmp:size=192m,mode=1777
+      - /home/node/.cache:size=32m,uid=1000,gid=1000
+
   # Connexion Google. Démarré seulement avec « --profile auth » ET quand ~/mes-liens/.env.auth existe (infra/auth-setup.sh) :
   # sans identifiants il ne pourrait pas démarrer, et il ne doit pas empêcher le reste de monter.
   oauth:

@@ -1,4 +1,5 @@
 import { Link } from './models';
+import { libraryOf } from './library';
 
 /**
  * Normalise une URL saisie. N'accepte que http(s) : un `javascript:` ou `data:` collé ne doit JAMAIS
@@ -7,7 +8,8 @@ import { Link } from './models';
 export function normalizeUrl(raw: string): string | null {
   const s = raw.trim();
   if (!s) return null;
-  const withScheme = /^[a-z][a-z0-9+.-]*:/i.test(s) && !/^[^/\s]+:\d+(\/|$)/.test(s) ? s : `https://${s}`;
+  const withScheme =
+    /^[a-z][a-z0-9+.-]*:/i.test(s) && !/^[^/\s]+:\d+(\/|$)/.test(s) ? s : `https://${s}`;
   try {
     const u = new URL(withScheme);
     if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
@@ -39,7 +41,9 @@ export function parseTags(input: string): string[] {
 export function tagCounts(links: Link[]): { tag: string; count: number }[] {
   const counts = new Map<string, number>();
   for (const l of links) for (const t of l.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
-  return [...counts].map(([tag, count]) => ({ tag, count })).sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
+  return [...counts]
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count || a.tag.localeCompare(b.tag));
 }
 
 const fold = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
@@ -50,7 +54,10 @@ export function filterLinks(links: Link[], query: string, tags: readonly string[
   return links.filter((l) => {
     if (!tags.every((t) => l.tags.includes(t))) return false;
     if (!words.length) return true;
-    const hay = fold(`${l.title} ${l.url} ${l.note} ${l.tags.join(' ')}`);
+    const b = libraryOf(l);
+    const hay = fold(
+      `${l.title} ${l.url} ${l.note} ${l.tags.join(' ')} ${l.category} ${l.source} ${b.collections.join(' ')} ${b.objective} ${b.resumeAt} ${b.nextAction} ${b.learned} ${b.applyTo}`,
+    );
     return words.every((w) => hay.includes(w));
   });
 }

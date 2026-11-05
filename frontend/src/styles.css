@@ -14,12 +14,27 @@ h3 { font-size: 1rem; }
 a { color: var(--accent); }
 :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
-.page { max-width: 72rem; margin: 0 auto; padding: 1rem; display: grid; gap: 1.5rem; }
+.library-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.library-tabs { display: flex; gap: .5rem; flex-wrap: wrap; }
+.library-tabs button, .view-choice button { min-height: 44px; }
+.view-choice { margin-block: 1rem; }
+.learning-fields { display: grid; gap: .75rem; }
+.learning-fields > * + * { margin-top: .75rem; }
+summary { cursor: pointer; font-weight: 600; padding-block: .5rem; }
+.notice { padding: .75rem; border-left: 3px solid var(--accent); background: var(--bg); }
+.notice a { display: block; }
+.batch-editor { margin-block: 1rem; min-width: 0; }
+.knowledge-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: 1rem; }
+input[type='date'] { font: inherit; padding: .55rem .7rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--bg); color: var(--fg); width: 100%; }
+
+.page { max-width: 72rem; width: 100%; margin: 0 auto; padding: 1rem; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
+.page > *, app-links-table, app-link-list { min-width: 0; }
+app-links-table, app-link-list { display: block; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: .75rem; padding: 1rem; }
 form { display: grid; gap: .75rem; }
 label { display: grid; gap: .25rem; font-weight: 600; font-size: .9rem; }
 label small { font-weight: 400; color: var(--muted); }
-.cols { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); }
+.cols { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); }
 input[type='text'], input[type='search'], input[type='password'], textarea, select {
   font: inherit; padding: .55rem .7rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--bg); color: var(--fg); width: 100%;
 }

@@ -9,17 +9,28 @@
 </header>
 
 <nav class="nav" aria-label="Navigation principale">
-  <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Accueil</a>
-  <a routerLink="/focus" routerLinkActive="active">★ Focus <small>{{ focusCount() }}</small></a>
-  <a routerLink="/sites" routerLinkActive="active">Sites <small>{{ siteCount() }}</small></a>
+  <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
+    >Accueil</a
+  >
+  <a routerLink="/focus" routerLinkActive="active"
+    >★ Focus <small>{{ focusCount() }}</small></a
+  >
+  <a routerLink="/library" routerLinkActive="active">Bibliothèque · À trier</a>
+  <a routerLink="/sites" routerLinkActive="active"
+    >Sites <small>{{ siteCount() }}</small></a
+  >
   <a routerLink="/table" routerLinkActive="active">Tableau</a>
   <a routerLink="/youtube" routerLinkActive="active">YouTube</a>
   <span class="sep" aria-hidden="true">|</span>
   @for (c of categories(); track c.category) {
-    <a [routerLink]="['/category', c.category]" routerLinkActive="active">{{ c.category }} <small>{{ c.count }}</small></a>
+    <a [routerLink]="['/category', c.category]" routerLinkActive="active"
+      >{{ c.category }} <small>{{ c.count }}</small></a
+    >
   }
   @if (uncategorizedCount()) {
-    <a [routerLink]="['/category', '_']" routerLinkActive="active">{{ uncategorizedLabel }} <small>{{ uncategorizedCount() }}</small></a>
+    <a [routerLink]="['/category', '_']" routerLinkActive="active"
+      >{{ uncategorizedLabel }} <small>{{ uncategorizedCount() }}</small></a
+    >
   }
 </nav>
 
@@ -34,7 +45,10 @@
   @if (showOnboarding()) {
     <section class="card onboarding" aria-labelledby="onb-h">
       <h2 id="onb-h">Cet appareil n'est pas encore connecté</h2>
-      <p>Tes liens sont enregistrés sur ton serveur. Ouvre la page <a routerLink="/admin">Admin</a>, section « Technique », pour connecter cet appareil.</p>
+      <p>
+        Tes liens sont enregistrés sur ton serveur. Ouvre la page <a routerLink="/admin">Admin</a>,
+        section « Technique », pour connecter cet appareil.
+      </p>
     </section>
   }
 </div>

@@ -6,6 +6,9 @@ import { LinkService } from '../core/link.service';
 import { filterLinks, tagCounts } from '../core/link-utils';
 import { Link } from '../core/models';
 import { FocusButton } from './focus-button';
+import { parseTags } from '../core/link-utils';
+import { libraryOf, LEARNING_STATES } from '../core/library';
+import { InsightsService, HEALTH_LABELS } from '../core/insights.service';
 
 const PAGE_SIZE = 100;
 
@@ -22,6 +25,22 @@ interface Column {
 })
 export class LinksTable {
   protected readonly svc = inject(LinkService);
+  protected readonly insights = inject(InsightsService);
+  protected readonly healthLabels = HEALTH_LABELS;
+  protected async checkSelected(): Promise<void> {
+    this.busy.set(true);
+    this.failure.set('');
+    try {
+      await this.insights.recheck(this.picked().map((l) => l.id));
+      this.message.set(
+        'Liens ajoutés à la file de vérification. Les résultats apparaîtront progressivement.',
+      );
+    } catch (e) {
+      this.failure.set(e instanceof Error ? e.message : 'Vérification indisponible.');
+    } finally {
+      this.busy.set(false);
+    }
+  }
 
   readonly links = input.required<Link[]>();
   /** false : pas de champ de recherche (la page parente filtre elle-même). */
@@ -42,18 +61,76 @@ export class LinksTable {
   protected readonly source = signal('');
   protected readonly tag = signal('');
   protected readonly selected = signal<ReadonlySet<string>>(new Set());
+  protected readonly batchCategory = signal('');
+  protected readonly batchTags = signal('');
+  protected readonly batchCollection = signal('');
+  protected readonly busy = signal(false);
+  protected readonly message = signal('');
+  protected readonly failure = signal('');
+  protected readonly libraryOf = libraryOf;
+  protected readonly states = LEARNING_STATES;
 
-  protected readonly sources = computed(() => [...new Set(this.links().map((l) => l.source).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' })));
+  protected async classify(
+    action: 'classify' | 'review' | 'inbox' | 'archive' | 'restore',
+  ): Promise<void> {
+    const ids = this.picked().map((l) => l.id);
+    if (!ids.length || this.busy()) return;
+    this.busy.set(true);
+    this.failure.set('');
+    this.message.set('');
+    try {
+      const patch =
+        action === 'classify'
+          ? {
+              ...(this.batchCategory().trim() ? { category: this.batchCategory() } : {}),
+              tags: parseTags(this.batchTags()),
+              collection: this.batchCollection(),
+            }
+          : {
+              library:
+                action === 'review'
+                  ? { reviewed: true }
+                  : action === 'inbox'
+                    ? { reviewed: false }
+                    : { archived: action === 'archive' },
+            };
+      const n = await this.svc.classifyMany(ids, patch);
+      this.message.set(`${n} lien(s) mis à jour.`);
+      this.selected.set(new Set());
+    } catch (e) {
+      this.failure.set(e instanceof Error ? e.message : 'Modification impossible.');
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected readonly sources = computed(() =>
+    [
+      ...new Set(
+        this.links()
+          .map((l) => l.source)
+          .filter(Boolean),
+      ),
+    ].sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' })),
+  );
   protected readonly tags = computed(() => tagCounts(this.links()));
 
   /** Tous les liens qui passent les filtres (pas seulement la page affichée) : c'est sur eux que « tout sélectionner » agit. */
   protected readonly rows = computed(() => {
-    const bySource = this.source() ? this.links().filter((l) => l.source === this.source()) : this.links();
-    return sortLinks(filterLinks(bySource, this.query(), this.tag() ? [this.tag()] : []), this.sortKey(), this.sortDir());
+    const bySource = this.source()
+      ? this.links().filter((l) => l.source === this.source())
+      : this.links();
+    return sortLinks(
+      filterLinks(bySource, this.query(), this.tag() ? [this.tag()] : []),
+      this.sortKey(),
+      this.sortDir(),
+    );
   });
   /** Sélection réellement visible : un lien coché puis écarté par un filtre n'est JAMAIS supprimé par le lot. */
   protected readonly picked = computed(() => this.rows().filter((l) => this.selected().has(l.id)));
-  protected readonly allPicked = computed(() => this.rows().length > 0 && this.picked().length === this.rows().length);
+  protected readonly allPicked = computed(
+    () => this.rows().length > 0 && this.picked().length === this.rows().length,
+  );
 
   protected readonly limit = signal(PAGE_SIZE);
   protected readonly shownRows = computed(() => this.rows().slice(0, this.limit()));
@@ -106,9 +183,17 @@ export class LinksTable {
   protected async removePicked(): Promise<void> {
     const picked = this.picked();
     if (!picked.length) return;
-    const sample = picked.slice(0, 5).map((l) => `• ${l.title}`).join('\n');
+    const sample = picked
+      .slice(0, 5)
+      .map((l) => `• ${l.title}`)
+      .join('\n');
     const more = picked.length > 5 ? `\n… et ${picked.length - 5} autre(s)` : '';
-    if (!confirm(`Supprimer ${picked.length} lien${picked.length > 1 ? 's' : ''} ?\n\n${sample}${more}`)) return;
+    if (
+      !confirm(
+        `Supprimer ${picked.length} lien${picked.length > 1 ? 's' : ''} ?\n\n${sample}${more}`,
+      )
+    )
+      return;
     await this.svc.removeMany(picked.map((l) => l.id));
     this.selected.set(new Set());
   }

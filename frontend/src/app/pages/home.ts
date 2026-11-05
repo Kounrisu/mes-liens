@@ -15,7 +15,7 @@ import { LinkList } from '../shared/link-list';
       </section>
       <section aria-labelledby="list-h">
         <h2 id="list-h">Mes liens</h2>
-        <app-link-list [links]="svc.links()" />
+        <app-link-list [links]="svc.activeLinks()" />
       </section>
     </main>
   `,

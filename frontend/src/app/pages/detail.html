@@ -5,8 +5,10 @@
     <article class="card detail" aria-labelledby="detail-h">
       <div class="row">
         <h2 id="detail-h">{{ l.title }}</h2>
-        <span class="spacer" style="flex:1"></span>
-        <a class="btn small primary-link" [href]="l.url" target="_blank" rel="noopener noreferrer">Aller au site ↗</a>
+        <span class="spacer" style="flex: 1"></span>
+        <a class="btn small primary-link" [href]="l.url" target="_blank" rel="noopener noreferrer"
+          >Aller au site ↗</a
+        >
         <app-focus-button [link]="l" />
         <a class="btn small" [routerLink]="['/link', l.id, 'edit']">Modifier</a>
         <button type="button" class="ghost danger small" (click)="remove()">Supprimer</button>
@@ -21,16 +23,35 @@
         <dd>{{ l.kind === 'site' ? 'Site / plateforme' : 'Lien' }}</dd>
         @if (site(); as s) {
           <dt>Site</dt>
-          <dd><a [routerLink]="['/link', s.id]">{{ s.title }}</a> <span class="meta">({{ s.domain }})</span></dd>
+          <dd>
+            <a [routerLink]="['/link', s.id]">{{ s.title }}</a>
+            <span class="meta">({{ s.domain }})</span>
+          </dd>
         }
         <dt>Adresse</dt>
-        <dd><a [href]="l.url" target="_blank" rel="noopener noreferrer">{{ l.url }}</a></dd>
+        <dd>
+          <a [href]="l.url" target="_blank" rel="noopener noreferrer">{{ l.url }}</a>
+        </dd>
         <dt>Source</dt>
-        <dd>{{ l.source || '—' }} <span class="meta">({{ l.domain }})</span></dd>
+        <dd>
+          {{ l.source || '—' }} <span class="meta">({{ l.domain }})</span>
+        </dd>
         <dt>Catégorie</dt>
-        <dd>@if (l.category) { <a class="badge cat" [routerLink]="['/category', l.category]">{{ l.category }}</a> } @else { — }</dd>
+        <dd>
+          @if (l.category) {
+            <a class="badge cat" [routerLink]="['/category', l.category]">{{ l.category }}</a>
+          } @else {
+            —
+          }
+        </dd>
         <dt>Étiquettes</dt>
-        <dd>@for (t of l.tags; track t) { <span class="badge">{{ t }}</span> {{ ' ' }} } @empty { — }</dd>
+        <dd>
+          @for (t of l.tags; track t) {
+            <span class="badge">{{ t }}</span> {{ ' ' }}
+          } @empty {
+            —
+          }
+        </dd>
         <dt>Note</dt>
         <dd class="note">{{ l.note || '—' }}</dd>
         <dt>Créé</dt>
@@ -42,14 +63,22 @@
       @if (l.kind === 'site') {
         <section aria-labelledby="children-h">
           <div class="row">
-            <h3 id="children-h">Liens de ce site <span class="meta">· {{ children().length }}</span></h3>
-            <span class="spacer" style="flex:1"></span>
-            <a class="btn small" [routerLink]="['/']" [queryParams]="{ site: l.id }">+ Ajouter un lien à ce site</a>
+            <h3 id="children-h">
+              Liens de ce site <span class="meta">· {{ children().length }}</span>
+            </h3>
+            <span class="spacer" style="flex: 1"></span>
+            <a class="btn small" [routerLink]="['/']" [queryParams]="{ site: l.id }"
+              >+ Ajouter un lien à ce site</a
+            >
           </div>
           <ul class="mini">
             @for (c of children(); track c.id) {
-              <li><a [routerLink]="['/link', c.id]">{{ c.title }}</a>
-                @if (c.category) { <span class="badge cat">{{ c.category }}</span> }</li>
+              <li>
+                <a [routerLink]="['/link', c.id]">{{ c.title }}</a>
+                @if (c.category) {
+                  <span class="badge cat">{{ c.category }}</span>
+                }
+              </li>
             } @empty {
               <li class="empty">Aucun lien rattaché pour l'instant.</li>
             }
@@ -57,10 +86,52 @@
         </section>
       }
 
+      <section class="card">
+        <h3>Mon apprentissage</h3>
+        <p>
+          {{ types[lib(l).resourceType] }} · {{ states[lib(l).learningStatus] }}
+          @if (lib(l).archived) {
+            · Archivé
+          }
+        </p>
+        @if (lib(l).collections.length) {
+          <p>Collections : {{ lib(l).collections.join(' · ') }}</p>
+        }
+        @if (lib(l).objective) {
+          <p class="note"><strong>Objectif :</strong> {{ lib(l).objective }}</p>
+        }
+        @if (lib(l).resumeAt) {
+          <p><strong>Reprendre à :</strong> {{ lib(l).resumeAt }}</p>
+        }
+        @if (lib(l).nextAction) {
+          <p><strong>Prochaine action :</strong> {{ lib(l).nextAction }}</p>
+        }
+        @if (lib(l).learned) {
+          <h3>Ce que j'ai appris</h3>
+          <p class="note">{{ lib(l).learned }}</p>
+        }
+        @if (lib(l).applyTo) {
+          <h3>Application</h3>
+          <p class="note">{{ lib(l).applyTo }}</p>
+        }
+        @if (lib(l).reviewOn) {
+          <p>À revoir le {{ lib(l).reviewOn }}</p>
+        }
+        <a class="btn" [routerLink]="['/link', l.id, 'edit']">Mettre à jour ma progression</a>
+      </section>
+      <section class="card">
+        <h3>Aperçu et disponibilité</h3>
+        <app-link-insight [link]="l" [detail]="true" />
+      </section>
       <h3>Historique</h3>
       <ol class="history">
         @for (e of events(); track e.id) {
-          <li><span class="meta">{{ e.at | date: 'dd/MM/yyyy HH:mm' }}</span> {{ label(e) }} @if (detail(e)) { : <span class="badge">{{ detail(e) }}</span> }</li>
+          <li>
+            <span class="meta">{{ e.at | date: 'dd/MM/yyyy HH:mm' }}</span> {{ label(e) }}
+            @if (detail(e)) {
+              : <span class="badge">{{ detail(e) }}</span>
+            }
+          </li>
         } @empty {
           <li class="empty">Aucun événement.</li>
         }
@@ -68,7 +139,9 @@
     </article>
     <p><a [routerLink]="['/table']">← Retour au tableau</a></p>
   } @else {
-    <p class="empty">Lien introuvable : il a peut-être été supprimé (ici ou sur un autre appareil).</p>
+    <p class="empty">
+      Lien introuvable : il a peut-être été supprimé (ici ou sur un autre appareil).
+    </p>
     <p><a [routerLink]="['/table']">← Retour au tableau</a></p>
   }
 </main>

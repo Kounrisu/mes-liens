@@ -91,7 +91,7 @@ class ApiIntegrationTests {
         UUID big = UUID.randomUUID();
         mvc.perform(authed(put("/api/links/" + big)).contentType(MediaType.APPLICATION_JSON)
                         .content(link(big, "x", "2026-11-01T10:00:00Z", null)
-                                .replace("\"screenshotId\":null,", "\"screenshotId\":null,\"category\":\"" + "a".repeat(65) + "\",")))
+                                .replace("\"screenshotId\":null,", "\"screenshotId\":null,\"category\":\"" + "a".repeat(201) + "\",")))
                 .andExpect(status().isBadRequest());
     }
 
@@ -264,5 +264,55 @@ class ApiIntegrationTests {
                 .andExpect(status().isPayloadTooLarge());
         mvc.perform(authed(get("/api/screenshots/" + UUID.randomUUID()))).andExpect(status().isNotFound());
         mvc.perform(authed(get("/api/screenshots/..%2F..%2Fapplication.properties"))).andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    void learningData_roundTripAndOldClientPreservation() throws Exception {
+        UUID id=UUID.randomUUID();
+        String library="""
+          ,"library":{"reviewed":true,"archived":false,"resourceType":"course","collections":["Angular"],"learningStatus":"active","objective":"Learn","resumeAt":"12:30","nextAction":"Practice","learned":"Signals","applyTo":"Project","reviewOn":"2026-12-01"}
+          """;
+        String initial=link(id,"Learning","2026-11-01T10:00:00Z",null);
+        initial=initial.substring(0,initial.length()-1)+library+"}";
+        mvc.perform(authed(put("/api/links/"+id)).contentType(MediaType.APPLICATION_JSON).content(initial))
+          .andExpect(status().isCreated()).andExpect(jsonPath("$.library.learned").value("Signals"));
+        mvc.perform(authed(put("/api/links/"+id)).contentType(MediaType.APPLICATION_JSON).content(link(id,"Old client","2026-11-02T10:00:00Z",null)))
+          .andExpect(status().isOk()).andExpect(jsonPath("$.library.learned").value("Signals"));
+        mvc.perform(authed(put("/api/links/"+UUID.randomUUID())).contentType(MediaType.APPLICATION_JSON).content(initial.replace("active","invalid")))
+          .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void insights_areLeasedAndDoNotOverwritePersonalData() throws Exception {
+        UUID id=UUID.randomUUID();
+        seed(id,link(id,"Personal title","2026-11-01T10:00:00Z",null));
+        mvc.perform(authed(post("/api/insights/recheck")).contentType(MediaType.APPLICATION_JSON).content("{\"ids\":[\""+id+"\"]}"))
+          .andExpect(status().isOk());
+        jdbc.update("UPDATE link_insights SET next_check_at='2000-01-01' WHERE link_id=?",id);
+        mvc.perform(authed(post("/api/insights/claim"))).andExpect(status().isOk()).andExpect(jsonPath("$[0].linkId").value(id.toString()));
+        UUID claim=jdbc.queryForObject("SELECT claim_id FROM link_insights WHERE link_id=?",UUID.class,id);
+        String result="""
+          {"claimId":"%s","url":"https://example.com/a","status":"working","httpStatus":200,"title":"Fetched title","description":"Summary","finalUrl":"https://example.com/a"}
+          """.formatted(claim);
+        long seq=jdbc.queryForObject("SELECT server_seq FROM links WHERE id=?",Long.class,id);
+        mvc.perform(authed(put("/api/insights/"+id)).contentType(MediaType.APPLICATION_JSON).content(result)).andExpect(status().isOk());
+        mvc.perform(authed(put("/api/insights/"+id)).contentType(MediaType.APPLICATION_JSON).content(result)).andExpect(status().isConflict());
+        assertThat(jdbc.queryForObject("SELECT server_seq FROM links WHERE id=?",Long.class,id)).isEqualTo(seq);
+        mvc.perform(authed(get("/api/links/"+id))).andExpect(jsonPath("$.title").value("Personal title"));
+        mvc.perform(authed(get("/api/insights"))).andExpect(status().isOk());
+    }
+
+    @Test
+    void insights_rejectResultAfterUrlChanges() throws Exception {
+        UUID id=UUID.randomUUID();seed(id,link(id,"x","2026-11-01T10:00:00Z",null));
+        mvc.perform(authed(post("/api/insights/recheck")).contentType(MediaType.APPLICATION_JSON).content("{\"ids\":[\""+id+"\"]}"));
+        jdbc.update("UPDATE link_insights SET next_check_at='1990-01-01' WHERE link_id=?",id);
+        mvc.perform(authed(post("/api/insights/claim"))).andExpect(status().isOk());
+        UUID claim=jdbc.queryForObject("SELECT claim_id FROM link_insights WHERE link_id=?",UUID.class,id);
+        seed(id,link(id,"x","2026-11-02T10:00:00Z",null).replace("https://example.com/a","https://example.org/new"));
+        String result="""
+          {"claimId":"%s","url":"https://example.com/a","status":"working","httpStatus":200,"title":"Old","description":"","finalUrl":"https://example.com/a"}
+          """.formatted(claim);
+        mvc.perform(authed(put("/api/insights/"+id)).contentType(MediaType.APPLICATION_JSON).content(result)).andExpect(status().isConflict());
     }
 }

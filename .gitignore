@@ -29,3 +29,5 @@ data/
 
 # Données personnelles (favoris, exports) : ne JAMAIS commiter (dépôt public)
 imports/
+.playwright-cli/
+output/playwright/

@@ -5,6 +5,7 @@ import { LinkStore } from './link-store';
 import { ImportError } from './backup';
 import { Link, LinkEvent, LinkKind } from './models';
 import { checkHierarchy } from './sites';
+import { LibraryData, libraryOf, validateLibrary, duplicateKey } from './library';
 
 /**
  * Archive ZIP « pour l'IA » : un fichier `links.json` lisible et modifiable, un `LISEZ-MOI.md` qui explique les règles,
@@ -21,6 +22,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Un lien tel qu'écrit dans links.json. Les champs optionnels absents à l'import = on garde la valeur actuelle. */
 export interface ZipLink {
+  library?: LibraryData;
   id?: string;
   url: string;
   title?: string;
@@ -39,15 +41,39 @@ export interface ZipLink {
   deleted?: boolean;
 }
 
-const EXT_BY_MIME: Record<string, string> = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' };
-const MIME_BY_EXT: Record<string, string> = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif' };
+const EXT_BY_MIME: Record<string, string> = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+};
+const MIME_BY_EXT: Record<string, string> = {
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  webp: 'image/webp',
+  gif: 'image/gif',
+};
 
 /** Type réel d'une image d'après ses premiers octets (jamais d'après le nom). null = pas une image acceptée. */
 export function sniffImage(b: Uint8Array): string | null {
-  if (b.length > 8 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return 'image/png';
+  if (b.length > 8 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47)
+    return 'image/png';
   if (b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'image/jpeg';
-  if (b.length > 6 && b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x38) return 'image/gif';
-  if (b.length > 12 && b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) return 'image/webp';
+  if (b.length > 6 && b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x38)
+    return 'image/gif';
+  if (
+    b.length > 12 &&
+    b[0] === 0x52 &&
+    b[1] === 0x49 &&
+    b[2] === 0x46 &&
+    b[3] === 0x46 &&
+    b[8] === 0x57 &&
+    b[9] === 0x45 &&
+    b[10] === 0x42 &&
+    b[11] === 0x50
+  )
+    return 'image/webp';
   return null;
 }
 
@@ -97,7 +123,10 @@ Cette archive contient tes liens. Tu peux la donner à une IA (ou l'éditer à l
 `;
 
 /** Construit l'archive. Les liens supprimés n'y figurent pas. */
-export async function exportZip(store: LinkStore, now = new Date().toISOString()): Promise<Uint8Array> {
+export async function exportZip(
+  store: LinkStore,
+  now = new Date().toISOString(),
+): Promise<Uint8Array> {
   const links = (await store.listLinks()).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   const files: Zippable = {};
   const entries: ZipLink[] = [];
@@ -123,12 +152,19 @@ export async function exportZip(store: LinkStore, now = new Date().toISOString()
       kind: l.kind,
       parentId: l.parentId,
       focusRank: l.focusRank,
+      library: l.library,
       screenshot,
       createdAt: l.createdAt,
       updatedAt: l.updatedAt,
     });
   }
-  files['links.json'] = strToU8(JSON.stringify({ format: ZIP_FORMAT, version: ZIP_VERSION, exportedAt: now, links: entries }, null, 2));
+  files['links.json'] = strToU8(
+    JSON.stringify(
+      { format: ZIP_FORMAT, version: ZIP_VERSION, exportedAt: now, links: entries },
+      null,
+      2,
+    ),
+  );
   files['LISEZ-MOI.md'] = strToU8(README);
   return zipSync(files, { level: 6 });
 }
@@ -153,6 +189,7 @@ export interface ZipImportPlan {
   missing: Link[];
   unchanged: number;
   errors: string[];
+  warnings: string[];
 }
 
 interface Parsed {
@@ -168,11 +205,14 @@ function readArchive(bytes: Uint8Array): Parsed {
   try {
     files = unzipSync(bytes, {
       filter: (f) => {
-        if (++count > MAX_ENTRIES) throw new ImportError('Archive trop volumineuse (trop de fichiers).');
+        if (++count > MAX_ENTRIES)
+          throw new ImportError('Archive trop volumineuse (trop de fichiers).');
         if (f.name.endsWith('/')) return false;
-        if (f.originalSize > MAX_ENTRY_BYTES) throw new ImportError(`« ${f.name} » dépasse ${MAX_ENTRY_BYTES / 1024 / 1024} Mo.`);
+        if (f.originalSize > MAX_ENTRY_BYTES)
+          throw new ImportError(`« ${f.name} » dépasse ${MAX_ENTRY_BYTES / 1024 / 1024} Mo.`);
         total += f.originalSize;
-        if (total > MAX_TOTAL_BYTES) throw new ImportError('Archive trop volumineuse une fois décompressée.');
+        if (total > MAX_TOTAL_BYTES)
+          throw new ImportError('Archive trop volumineuse une fois décompressée.');
         return true;
       },
     });
@@ -181,49 +221,81 @@ function readArchive(bytes: Uint8Array): Parsed {
     throw new ImportError("Ce fichier n'est pas une archive ZIP lisible.");
   }
   const norm: Record<string, Uint8Array> = {};
-  for (const [name, data] of Object.entries(files)) norm[name.replace(/\\/g, '/').replace(/^\/+/, '')] = data;
+  for (const [name, data] of Object.entries(files))
+    norm[name.replace(/\\/g, '/').replace(/^\/+/, '')] = data;
 
   // links.json à la racine, ou dans un dossier unique (cas d'une archive refaite en zippant le dossier).
-  const candidates = Object.keys(norm).filter((n) => n === 'links.json' || n.endsWith('/links.json')).sort((a, b) => a.split('/').length - b.split('/').length);
+  const candidates = Object.keys(norm)
+    .filter((n) => n === 'links.json' || n.endsWith('/links.json'))
+    .sort((a, b) => a.split('/').length - b.split('/').length);
   const path = candidates[0];
-  if (!path) throw new ImportError("Cette archive ne contient pas de fichier links.json.");
+  if (!path) throw new ImportError('Cette archive ne contient pas de fichier links.json.');
   let raw: unknown;
   try {
     raw = JSON.parse(strFromU8(norm[path]));
   } catch {
     throw new ImportError('links.json est un JSON invalide.');
   }
-  if (!isRecord(raw) || raw['format'] !== ZIP_FORMAT) throw new ImportError("links.json n'est pas un export mes-liens (format attendu : " + ZIP_FORMAT + ').');
-  if (raw['version'] !== ZIP_VERSION) throw new ImportError(`Version d'archive non supportée : ${String(raw['version'])}.`);
-  if (!Array.isArray(raw['links'])) throw new ImportError('links.json : la liste « links » est absente.');
-  return { entries: raw['links'], files: norm, prefix: path.slice(0, path.length - 'links.json'.length) };
+  if (!isRecord(raw) || raw['format'] !== ZIP_FORMAT)
+    throw new ImportError(
+      "links.json n'est pas un export mes-liens (format attendu : " + ZIP_FORMAT + ').',
+    );
+  if (raw['version'] !== ZIP_VERSION)
+    throw new ImportError(`Version d'archive non supportée : ${String(raw['version'])}.`);
+  if (!Array.isArray(raw['links']))
+    throw new ImportError('links.json : la liste « links » est absente.');
+  return {
+    entries: raw['links'],
+    files: norm,
+    prefix: path.slice(0, path.length - 'links.json'.length),
+  };
 }
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
-const sameTags = (a: string[], b: string[]) => a.length === b.length && a.every((t, i) => t === b[i]);
+const sameTags = (a: string[], b: string[]) =>
+  a.length === b.length && a.every((t, i) => t === b[i]);
 
 /**
  * Lit l'archive et prépare les changements SANS rien écrire. Toutes les erreurs sont collectées (pas seulement la première) :
  * si `errors` n'est pas vide, l'application est refusée.
  */
-export async function planZipImport(store: LinkStore, bytes: Uint8Array, now = new Date().toISOString()): Promise<ZipImportPlan> {
+export async function planZipImport(
+  store: LinkStore,
+  bytes: Uint8Array,
+  now = new Date().toISOString(),
+): Promise<ZipImportPlan> {
   const { entries, files, prefix } = readArchive(bytes);
   const current = await store.listLinks({ includeDeleted: true });
   const byId = new Map(current.map((l) => [l.id, l]));
-  const plan: ZipImportPlan = { created: [], updated: [], deleted: [], missing: [], unchanged: 0, errors: [] };
+  const plan: ZipImportPlan = {
+    created: [],
+    updated: [],
+    deleted: [],
+    missing: [],
+    unchanged: 0,
+    errors: [],
+    warnings: [],
+  };
 
   const seen = new Set<string>();
   const alias = new Map<string, string>(); // id d'origine non-UUID → id attribué (pour résoudre parentId)
   const finalIds: string[] = [];
-  const staged: { e: Record<string, unknown>; where: string; id: string; existing: Link | undefined }[] = [];
+  const staged: {
+    e: Record<string, unknown>;
+    where: string;
+    id: string;
+    existing: Link | undefined;
+  }[] = [];
 
   entries.forEach((e, i) => {
     if (!isRecord(e)) return void plan.errors.push(`Lien #${i + 1} : ce n'est pas un objet.`);
     const rawId = typeof e['id'] === 'string' ? e['id'].trim() : '';
-    const existing = UUID.test(rawId) ? byId.get(rawId.toLowerCase()) ?? byId.get(rawId) : undefined;
+    const existing = UUID.test(rawId)
+      ? (byId.get(rawId.toLowerCase()) ?? byId.get(rawId))
+      : undefined;
     const id = UUID.test(rawId) ? (existing?.id ?? rawId.toLowerCase()) : crypto.randomUUID();
     if (rawId && !UUID.test(rawId)) alias.set(rawId, id);
     const where = `Lien #${i + 1}${typeof e['title'] === 'string' && e['title'] ? ` « ${e['title'].slice(0, 40)} »` : ''}`;
@@ -242,8 +314,8 @@ export async function planZipImport(store: LinkStore, bytes: Uint8Array, now = n
     const str = (k: string, max: number): string | undefined => {
       const v = e[k];
       if (v === undefined) return undefined;
-      if (typeof v !== 'string') return void err(`« ${k} » doit être un texte.`), undefined;
-      if (v.length > max) return void err(`« ${k} » dépasse ${max} caractères.`), undefined;
+      if (typeof v !== 'string') return (void err(`« ${k} » doit être un texte.`), undefined);
+      if (v.length > max) return (void err(`« ${k} » dépasse ${max} caractères.`), undefined);
       return v;
     };
 
@@ -260,7 +332,10 @@ export async function planZipImport(store: LinkStore, bytes: Uint8Array, now = n
       if (existing && rawUrl === existing.url) url = existing.url;
       else {
         const n = normalizeUrl(rawUrl);
-        if (!n) err(`adresse invalide (« ${rawUrl.slice(0, 60)} » : seules http et https sont acceptées).`);
+        if (!n)
+          err(
+            `adresse invalide (« ${rawUrl.slice(0, 60)} » : seules http et https sont acceptées).`,
+          );
         else url = n;
       }
     } else if (!existing) err('« url » est obligatoire pour un nouveau lien.');
@@ -274,7 +349,8 @@ export async function planZipImport(store: LinkStore, bytes: Uint8Array, now = n
 
     let tags = existing?.tags ?? [];
     if (e['tags'] !== undefined) {
-      if (!Array.isArray(e['tags']) || e['tags'].some((t) => typeof t !== 'string')) err('« tags » doit être une liste de textes.');
+      if (!Array.isArray(e['tags']) || e['tags'].some((t) => typeof t !== 'string'))
+        err('« tags » doit être une liste de textes.');
       else tags = parseTags((e['tags'] as string[]).join(','));
     }
 
@@ -289,19 +365,26 @@ export async function planZipImport(store: LinkStore, bytes: Uint8Array, now = n
       const p = e['parentId'];
       if (p === null || p === '') parentId = null;
       else if (typeof p !== 'string') err('« parentId » invalide.');
-      else parentId = alias.get(p) ?? (UUID.test(p) ? p.toLowerCase() : (err(`« parentId » n'est pas un identifiant connu (${p.slice(0, 40)}).`), null));
+      else
+        parentId =
+          alias.get(p) ??
+          (UUID.test(p)
+            ? p.toLowerCase()
+            : (err(`« parentId » n'est pas un identifiant connu (${p.slice(0, 40)}).`), null));
     }
 
     let focusRank = existing?.focusRank ?? null;
     if (e['focusRank'] !== undefined) {
       const r = e['focusRank'];
       if (r === null) focusRank = null;
-      else if (typeof r !== 'number' || !Number.isInteger(r) || r < 1 || r > 100000) err('« focusRank » doit être un entier entre 1 et 100000, ou null.');
+      else if (typeof r !== 'number' || !Number.isInteger(r) || r < 1 || r > 100000)
+        err('« focusRank » doit être un entier entre 1 et 100000, ou null.');
       else focusRank = r;
     }
 
     const createdAt = validDate(e['createdAt']) ?? existing?.createdAt ?? now;
-    if (e['createdAt'] !== undefined && validDate(e['createdAt']) === undefined) err('« createdAt » n\'est pas une date ISO.');
+    if (e['createdAt'] !== undefined && validDate(e['createdAt']) === undefined)
+      err("« createdAt » n'est pas une date ISO.");
 
     // Capture
     let screenshotId = existing?.screenshotId ?? null;
@@ -316,7 +399,8 @@ export async function planZipImport(store: LinkStore, bytes: Uint8Array, now = n
         else {
           const base = (name.split('/').pop() ?? '').replace(/\.[^.]+$/, '');
           const wantedId = UUID.test(base) ? base.toLowerCase() : null;
-          if (wantedId && existing?.screenshotId === wantedId) screenshotId = wantedId; // inchangée
+          if (wantedId && existing?.screenshotId === wantedId)
+            screenshotId = wantedId; // inchangée
           else {
             const data = files[prefix + name] ?? files[name];
             if (!data) err(`capture « ${name} » introuvable dans l'archive.`);
@@ -324,9 +408,18 @@ export async function planZipImport(store: LinkStore, bytes: Uint8Array, now = n
             else {
               const mime = sniffImage(data);
               const ext = (name.split('.').pop() ?? '').toLowerCase();
-              if (!mime || (MIME_BY_EXT[ext] && MIME_BY_EXT[ext] !== mime && !(ext === 'jpeg' && mime === 'image/jpeg'))) err(`« ${name} » n'est pas une image PNG, JPEG, WebP ou GIF valide.`);
+              if (
+                !mime ||
+                (MIME_BY_EXT[ext] &&
+                  MIME_BY_EXT[ext] !== mime &&
+                  !(ext === 'jpeg' && mime === 'image/jpeg'))
+              )
+                err(`« ${name} » n'est pas une image PNG, JPEG, WebP ou GIF valide.`);
               else {
-                screenshotId = wantedId && !(await store.hasScreenshot(wantedId)) ? wantedId : crypto.randomUUID();
+                screenshotId =
+                  wantedId && !(await store.hasScreenshot(wantedId))
+                    ? wantedId
+                    : crypto.randomUUID();
                 shot = { bytes: data, mime };
               }
             }
@@ -335,7 +428,16 @@ export async function planZipImport(store: LinkStore, bytes: Uint8Array, now = n
       }
     }
 
+    let library = existing?.library;
+    if (e['library'] !== undefined) {
+      try {
+        library = validateLibrary(e['library']);
+      } catch (error) {
+        err(error instanceof Error ? error.message : 'Formation invalide.');
+      }
+    }
     const next: Link = {
+      ...(library ? { library } : {}),
       id,
       url,
       title: title.trim() || domainOf(url) || url,
@@ -355,7 +457,10 @@ export async function planZipImport(store: LinkStore, bytes: Uint8Array, now = n
     view.set(id, next);
 
     if (!existing) {
-      pending.push({ change: { link: next, before: null, screenshot: shot, fields: ['création'] }, where });
+      pending.push({
+        change: { link: next, before: null, screenshot: shot, fields: ['création'] },
+        where,
+      });
       continue;
     }
     const fields: string[] = [];
@@ -370,15 +475,22 @@ export async function planZipImport(store: LinkStore, bytes: Uint8Array, now = n
     if (next.parentId !== existing.parentId) fields.push('site parent');
     if (next.focusRank !== existing.focusRank) fields.push('rang focus');
     if (next.screenshotId !== existing.screenshotId) fields.push('capture');
+    if (JSON.stringify(libraryOf(next)) !== JSON.stringify(libraryOf(existing)))
+      fields.push('organisation et formation');
     if (fields.length === 0) plan.unchanged++;
-    else pending.push({ change: { link: next, before: existing, screenshot: shot, fields }, where });
+    else
+      pending.push({ change: { link: next, before: existing, screenshot: shot, fields }, where });
   }
 
   // Rattachements vérifiés sur la vue finale.
   const finalList = [...view.values()];
   for (const { change, where } of pending) {
     const l = change.link;
-    if (l.parentId !== (change.before?.parentId ?? null) || l.kind !== (change.before?.kind ?? 'link') || !change.before) {
+    if (
+      l.parentId !== (change.before?.parentId ?? null) ||
+      l.kind !== (change.before?.kind ?? 'link') ||
+      !change.before
+    ) {
       const bad = checkHierarchy(finalList, l.id, l.kind, l.parentId);
       if (bad) plan.errors.push(`${where} : ${bad}`);
     }
@@ -386,6 +498,17 @@ export async function planZipImport(store: LinkStore, bytes: Uint8Array, now = n
   }
 
   plan.missing = current.filter((l) => l.deletedAt === null && !seen.has(l.id));
+  const urls = new Map<string, Link>();
+  const imported = new Set([...plan.created, ...plan.updated].map((c) => c.link.id));
+  for (const l of finalList) {
+    const key = duplicateKey(l.url),
+      previous = urls.get(key);
+    if (previous && (imported.has(l.id) || imported.has(previous.id)))
+      plan.warnings.push(
+        `Adresse déjà présente : « ${l.title} » et « ${previous.title} ». Les deux liens seront conservés.`,
+      );
+    else urls.set(key, l);
+  }
   return plan;
 }
 
@@ -402,28 +525,57 @@ export async function applyZipImport(
   opts: { deleteMissing: boolean },
   now = new Date().toISOString(),
 ): Promise<ZipImportResult> {
-  if (plan.errors.length) throw new ImportError("L'archive contient des erreurs : rien n'a été importé.");
-  const ev = (linkId: string, type: LinkEvent['type'], payload: Record<string, unknown>): LinkEvent => ({ id: crypto.randomUUID(), linkId, type, payload, at: now });
-  const stamp = (prev: string) => new Date(Math.max(Date.parse(now), Date.parse(prev) + 1)).toISOString();
+  if (plan.errors.length)
+    throw new ImportError("L'archive contient des erreurs : rien n'a été importé.");
+  const ev = (
+    linkId: string,
+    type: LinkEvent['type'],
+    payload: Record<string, unknown>,
+  ): LinkEvent => ({ id: crypto.randomUUID(), linkId, type, payload, at: now });
+  const stamp = (prev: string) =>
+    new Date(Math.max(Date.parse(now), Date.parse(prev) + 1)).toISOString();
 
+  const links: Link[] = [];
+  const events: LinkEvent[] = [];
+  const screenshots: { id: string; blob: Blob }[] = [];
   for (const c of plan.created) {
-    if (c.screenshot && c.link.screenshotId) await store.putScreenshot(c.link.screenshotId, new Blob([c.screenshot.bytes as BlobPart], { type: c.screenshot.mime }));
-    await store.putLink({ ...c.link, createdAt: c.link.createdAt, updatedAt: now });
-    await store.addEvent(ev(c.link.id, 'created', { url: c.link.url, via: 'zip' }));
-    for (const t of c.link.tags) await store.addEvent(ev(c.link.id, 'tagged', { tag: t }));
-    if (c.screenshot && c.link.screenshotId) await store.addEvent(ev(c.link.id, 'screenshot_added', { screenshotId: c.link.screenshotId }));
+    if (c.screenshot && c.link.screenshotId)
+      screenshots.push({
+        id: c.link.screenshotId,
+        blob: new Blob([c.screenshot.bytes as BlobPart], { type: c.screenshot.mime }),
+      });
+    links.push({ ...c.link, createdAt: c.link.createdAt, updatedAt: now });
+    events.push(ev(c.link.id, 'created', { url: c.link.url, via: 'zip' }));
+    for (const t of c.link.tags) events.push(ev(c.link.id, 'tagged', { tag: t }));
+    if (c.screenshot && c.link.screenshotId)
+      events.push(ev(c.link.id, 'screenshot_added', { screenshotId: c.link.screenshotId }));
   }
   for (const c of plan.updated) {
     const before = c.before as Link;
-    if (c.screenshot && c.link.screenshotId) await store.putScreenshot(c.link.screenshotId, new Blob([c.screenshot.bytes as BlobPart], { type: c.screenshot.mime }));
-    await store.putLink({ ...c.link, updatedAt: stamp(before.updatedAt) });
-    for (const t of c.link.tags.filter((t) => !before.tags.includes(t))) await store.addEvent(ev(c.link.id, 'tagged', { tag: t }));
-    for (const t of before.tags.filter((t) => !c.link.tags.includes(t))) await store.addEvent(ev(c.link.id, 'untagged', { tag: t }));
-    if (c.link.note !== before.note) await store.addEvent(ev(c.link.id, 'note_edited', { from: before.note, to: c.link.note }));
-    if (c.screenshot && c.link.screenshotId) await store.addEvent(ev(c.link.id, 'screenshot_added', { screenshotId: c.link.screenshotId }));
+    if (c.screenshot && c.link.screenshotId)
+      screenshots.push({
+        id: c.link.screenshotId,
+        blob: new Blob([c.screenshot.bytes as BlobPart], { type: c.screenshot.mime }),
+      });
+    links.push({ ...c.link, updatedAt: stamp(before.updatedAt) });
+    for (const t of c.link.tags.filter((t) => !before.tags.includes(t)))
+      events.push(ev(c.link.id, 'tagged', { tag: t }));
+    for (const t of before.tags.filter((t) => !c.link.tags.includes(t)))
+      events.push(ev(c.link.id, 'untagged', { tag: t }));
+    if (c.link.note !== before.note)
+      events.push(ev(c.link.id, 'note_edited', { from: before.note, to: c.link.note }));
+    if (c.screenshot && c.link.screenshotId)
+      events.push(ev(c.link.id, 'screenshot_added', { screenshotId: c.link.screenshotId }));
   }
   const toDelete = [...plan.deleted, ...(opts.deleteMissing ? plan.missing : [])];
-  for (const l of toDelete) await store.softDeleteLink(l.id, now);
+  for (const l of toDelete)
+    links.push({ ...l, deletedAt: stamp(l.updatedAt), updatedAt: stamp(l.updatedAt) });
+  const expected = new Map<string, string | null>([
+    ...plan.created.map((c) => [c.link.id, null] as const),
+    ...plan.updated.map((c) => [c.link.id, c.before!.updatedAt] as const),
+    ...toDelete.map((l) => [l.id, l.updatedAt] as const),
+  ]);
+  await store.applyImport({ links, events, screenshots, expected });
   return { created: plan.created.length, updated: plan.updated.length, deleted: toDelete.length };
 }
 

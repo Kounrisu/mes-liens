@@ -1,3 +1,4 @@
+import { LinkInsight } from './link-insight';
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -12,7 +13,7 @@ const PAGE_SIZE = 48;
 /** Liste en cartes avec recherche et filtre par étiquettes. Utilisée par l'accueil et les pages de catégorie. */
 @Component({
   selector: 'app-link-list',
-  imports: [DatePipe, RouterLink, FocusButton],
+  imports: [LinkInsight, DatePipe, RouterLink, FocusButton],
   templateUrl: './link-list.html',
 })
 export class LinkList {
@@ -25,7 +26,9 @@ export class LinkList {
 
   protected readonly query = signal('');
   protected readonly activeTags = signal<string[]>([]);
-  protected readonly visible = computed(() => filterLinks(this.links(), this.query(), this.activeTags()));
+  protected readonly visible = computed(() =>
+    filterLinks(this.links(), this.query(), this.activeTags()),
+  );
   protected readonly allTags = computed(() => tagCounts(this.links()));
 
   /** Pagination « afficher plus » : 2 000 cartes d'un coup ralentiraient l'écran. Remise à zéro quand les filtres changent. */

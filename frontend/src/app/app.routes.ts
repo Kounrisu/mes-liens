@@ -8,8 +8,10 @@ import { HomePage } from './pages/home';
 import { SitesPage } from './pages/sites';
 import { TablePage } from './pages/table';
 import { YoutubePage } from './pages/youtube';
+import { LibraryPage } from './pages/library';
 
 export const routes: Routes = [
+  { path: 'library', component: LibraryPage, title: 'Bibliothèque — mes-liens' },
   { path: '', component: HomePage, title: 'mes-liens' },
   { path: 'admin', component: AdminPage, title: 'Administration — mes-liens' },
   { path: 'focus', component: FocusPage, title: 'Focus — mes-liens' },

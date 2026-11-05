@@ -1,16 +1,24 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { ImportError, exportToJson, importFromJson } from './backup';
 import { exportBookmarksHtml } from './export-html';
-import { ZipImportPlan, ZipImportResult, applyZipImport, exportZip, planZipImport } from './zip-backup';
+import {
+  ZipImportPlan,
+  ZipImportResult,
+  applyZipImport,
+  exportZip,
+  planZipImport,
+} from './zip-backup';
 import { LinkStore } from './link-store';
 import { detectSource, normalizeCategory } from './catalog';
 import { planAdd, planMove, planRemove } from './focus';
 import { domainOf } from './link-utils';
 import { Link, LinkEvent, LinkKind } from './models';
 import { checkHierarchy } from './sites';
+import { LibraryData, libraryOf, validateLibrary, categoryWithin } from './library';
 
 /** Tout ce qui se saisit sur un lien. `url` est déjà normalisé (http/https). */
 export interface LinkFields {
+  library?: LibraryData;
   url: string;
   title: string;
   tags: string[];
@@ -32,11 +40,13 @@ export type ScreenshotChange = 'keep' | 'remove' | Blob;
 export class LinkService {
   private store?: LinkStore;
   private readonly urls = new Map<string, string>(); // screenshotId -> object URL
+  private readonly loadingScreenshots = new Set<string>();
 
   readonly ready = signal(false);
   readonly links = signal<Link[]>([]);
   readonly screenshotUrls = signal<Record<string, string>>({});
   readonly count = computed(() => this.links().length);
+  readonly activeLinks = computed(() => this.links().filter((l) => !libraryOf(l).archived));
   /** Incrémenté à chaque modification LOCALE (déclenche la synchro). Pas après une synchro. */
   readonly localChanges = signal(0);
 
@@ -84,10 +94,12 @@ export class LinkService {
       createdAt: now,
       updatedAt: now,
       deletedAt: null,
+      library: validateLibrary(n.library),
     };
     await store.putLink(link);
     await store.addEvent(this.event(id, 'created', { url: n.url }, now));
-    if (screenshotId) await store.addEvent(this.event(id, 'screenshot_added', { screenshotId }, now));
+    if (screenshotId)
+      await store.addEvent(this.event(id, 'screenshot_added', { screenshotId }, now));
     await this.afterLocalChange();
     return link;
   }
@@ -99,7 +111,8 @@ export class LinkService {
   async update(id: string, f: LinkFields, shot: ScreenshotChange = 'keep'): Promise<Link> {
     const store = this.need();
     const before = await store.getLink(id);
-    if (!before || before.deletedAt !== null) throw new Error('Lien introuvable (il a peut-être été supprimé sur un autre appareil).');
+    if (!before || before.deletedAt !== null)
+      throw new Error('Lien introuvable (il a peut-être été supprimé sur un autre appareil).');
     const invalid = checkHierarchy(this.links(), id, f.kind, f.parentId);
     if (invalid) throw new Error(invalid);
 
@@ -123,22 +136,84 @@ export class LinkService {
       screenshotId,
       category: normalizeCategory(f.category),
       source: f.source.trim(),
+      library: validateLibrary(f.library ?? before.library),
       kind: f.kind,
       parentId: f.kind === 'site' ? null : f.parentId,
       updatedAt: this.stampAfter(before.updatedAt),
     };
     await store.putLink(after);
 
-    for (const t of after.tags.filter((t) => !before.tags.includes(t))) await store.addEvent(this.event(id, 'tagged', { tag: t }, now));
-    for (const t of before.tags.filter((t) => !after.tags.includes(t))) await store.addEvent(this.event(id, 'untagged', { tag: t }, now));
-    if (after.note !== before.note) await store.addEvent(this.event(id, 'note_edited', { from: before.note, to: after.note }, now));
-    if (addedShot) await store.addEvent(this.event(id, 'screenshot_added', { screenshotId: addedShot }, now));
+    for (const t of after.tags.filter((t) => !before.tags.includes(t)))
+      await store.addEvent(this.event(id, 'tagged', { tag: t }, now));
+    for (const t of before.tags.filter((t) => !after.tags.includes(t)))
+      await store.addEvent(this.event(id, 'untagged', { tag: t }, now));
+    if (after.note !== before.note)
+      await store.addEvent(
+        this.event(id, 'note_edited', { from: before.note, to: after.note }, now),
+      );
+    if (addedShot)
+      await store.addEvent(this.event(id, 'screenshot_added', { screenshotId: addedShot }, now));
 
     await this.afterLocalChange();
     return after;
   }
 
   // ---- page Focus ----
+
+  async classifyMany(
+    ids: readonly string[],
+    patch: {
+      category?: string;
+      tags?: string[];
+      collection?: string;
+      library?: Partial<LibraryData>;
+    },
+  ): Promise<number> {
+    const count = await this.need().mutateLinks(ids, (l) => {
+      const lib = libraryOf(l);
+      const library = validateLibrary({
+        ...lib,
+        ...patch.library,
+        collections: patch.collection
+          ? [...new Set([...lib.collections, patch.collection.trim()])]
+          : lib.collections,
+      });
+      const tags = patch.tags ? [...new Set([...l.tags, ...patch.tags])] : l.tags;
+      if (tags.length > 50) throw new Error('Un lien ne peut pas avoir plus de 50 étiquettes.');
+      return {
+        ...l,
+        category: patch.category === undefined ? l.category : normalizeCategory(patch.category),
+        tags,
+        library,
+      };
+    });
+    if (count) await this.afterLocalChange();
+    return count;
+  }
+
+  async renameClassification(kind: 'category' | 'tag', from: string, to: string): Promise<number> {
+    const target = kind === 'category' ? normalizeCategory(to) : to.trim().toLowerCase();
+    if (!from || !target || (kind === 'tag' && (target.length > 64 || /[,\n]/.test(target))))
+      throw new Error('Choisis un nom valide.');
+    if (kind === 'category' && from !== target && categoryWithin(target, from))
+      throw new Error('Une catégorie ne peut pas être déplacée dans sa propre sous-catégorie.');
+    const n = await this.need().mutateLinks(
+      this.links().map((l) => l.id),
+      (l) => {
+        if (kind === 'tag')
+          return l.tags.includes(from)
+            ? { ...l, tags: [...new Set(l.tags.map((t) => (t === from ? target : t)))] }
+            : l;
+        if (!categoryWithin(l.category, from)) return l;
+        const category = target + l.category.slice(from.length);
+        if (category.length > 200)
+          throw new Error('Chemin de catégorie trop long (200 caractères maximum).');
+        return { ...l, category };
+      },
+    );
+    if (n) await this.afterLocalChange();
+    return n;
+  }
 
   async addToFocus(id: string): Promise<void> {
     await this.applyRanks(planAdd(this.links(), id));
@@ -189,7 +264,10 @@ export class LinkService {
     return exportToJson(this.need());
   }
 
-  async importJson(json: string, mode: 'replace' | 'merge'): Promise<{ links: number; events: number }> {
+  async importJson(
+    json: string,
+    mode: 'replace' | 'merge',
+  ): Promise<{ links: number; events: number }> {
     const r = await importFromJson(this.need(), json, mode);
     await this.afterLocalChange();
     return r;
@@ -221,7 +299,12 @@ export class LinkService {
     await this.refresh();
   }
 
-  private event(linkId: string, type: LinkEvent['type'], payload: Record<string, unknown>, at: string): LinkEvent {
+  private event(
+    linkId: string,
+    type: LinkEvent['type'],
+    payload: Record<string, unknown>,
+    at: string,
+  ): LinkEvent {
     return { id: crypto.randomUUID(), linkId, type, payload, at };
   }
 
@@ -235,17 +318,29 @@ export class LinkService {
     const links = await store.listLinks();
     this.links.set(links);
     const next = { ...this.screenshotUrls() };
-    for (const l of links) {
-      if (l.screenshotId && !this.urls.has(l.screenshotId)) {
-        const blob = await store.getScreenshot(l.screenshotId);
-        if (blob) {
-          const u = URL.createObjectURL(blob);
-          this.urls.set(l.screenshotId, u);
-          next[l.screenshotId] = u;
-        }
+    const used = new Set(links.map((l) => l.screenshotId));
+    for (const [id, url] of this.urls)
+      if (!used.has(id)) {
+        URL.revokeObjectURL(url);
+        this.urls.delete(id);
+        delete next[id];
       }
-    }
     this.screenshotUrls.set(next);
+  }
+
+  async ensureScreenshot(id: string): Promise<void> {
+    if (this.urls.has(id) || this.loadingScreenshots.has(id)) return;
+    this.loadingScreenshots.add(id);
+    try {
+      const blob = await this.need().getScreenshot(id);
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        this.urls.set(id, url);
+        this.screenshotUrls.update((s) => ({ ...s, [id]: url }));
+      }
+    } finally {
+      this.loadingScreenshots.delete(id);
+    }
   }
 
   private need(): LinkStore {

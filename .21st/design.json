@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "project": {
+    "name": "30-mes-liens",
+    "productType": "Personal learning library",
+    "stack": [
+      "Angular",
+      "TypeScript",
+      "CSS",
+      "Spring Boot",
+      "PostgreSQL"
+    ]
+  },
+  "sources": {
+    "tokens": [
+      "frontend/src/styles.css"
+    ],
+    "components": [
+      "frontend/src/app/shared"
+    ],
+    "assets": [],
+    "instructions": []
+  },
+  "design": {
+    "colorMode": "system",
+    "colors": {},
+    "typography": {},
+    "spacing": {},
+    "radius": {},
+    "shadows": {},
+    "motion": {},
+    "density": "compact"
+  },
+  "components": {
+    "installed": [],
+    "preferredPrimitives": [],
+    "patterns": []
+  },
+  "constraints": {
+    "must": [
+      "Reuse existing Angular components and CSS variables",
+      "French interface labels",
+      "Accessible forms and mobile layouts"
+    ],
+    "avoid": [
+      "New UI framework",
+      "Decorative redesign"
+    ]
+  },
+  "decisions": [
+    "Preserve existing visual identity; add library, inbox and learning controls"
+  ],
+  "evidence": [],
+  "generatedAt": "2026-11-05T16:48:19.677Z"
+}

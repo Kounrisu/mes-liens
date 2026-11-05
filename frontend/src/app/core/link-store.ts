@@ -3,8 +3,19 @@ import { Link, LinkEvent } from './models';
 
 /** Liens écrits avant l'existence des catégories / du focus : les champs manquent dans IndexedDB. */
 function withDefaults(l: Link): Link {
-  return l.category === undefined || l.source === undefined || l.focusRank === undefined || l.kind === undefined || l.parentId === undefined
-    ? { ...l, category: l.category ?? '', source: l.source ?? '', focusRank: l.focusRank ?? null, kind: l.kind ?? 'link', parentId: l.parentId ?? null }
+  return l.category === undefined ||
+    l.source === undefined ||
+    l.focusRank === undefined ||
+    l.kind === undefined ||
+    l.parentId === undefined
+    ? {
+        ...l,
+        category: l.category ?? '',
+        source: l.source ?? '',
+        focusRank: l.focusRank ?? null,
+        kind: l.kind ?? 'link',
+        parentId: l.parentId ?? null,
+      }
     : l;
 }
 
@@ -76,9 +87,14 @@ export class LinkStore {
           db.createObjectStore('meta', { keyPath: 'key' });
           // Données écrites avant l'existence de la synchro (v1/v2) : jamais envoyées au serveur → tout est à pousser.
           if (oldVersion >= 1) {
-            const kinds = [['links', 'link'], ['events', 'event'], ['screenshots', 'screenshot']] as const;
+            const kinds = [
+              ['links', 'link'],
+              ['events', 'event'],
+              ['screenshots', 'screenshot'],
+            ] as const;
             for (const [storeName, kind] of kinds) {
-              for (const id of await tx.objectStore(storeName).getAllKeys()) await dirty.put({ key: `${kind}:${id}`, kind, id: String(id), n: 1 });
+              for (const id of await tx.objectStore(storeName).getAllKeys())
+                await dirty.put({ key: `${kind}:${id}`, kind, id: String(id), n: 1 });
             }
           }
         }
@@ -117,7 +133,8 @@ export class LinkStore {
     const tx = this.db.transaction(['links', 'events', 'screenshots', 'dirty'], 'readwrite');
     for (const id of await tx.objectStore('links').getAllKeys()) await this.mark(tx, 'link', id);
     for (const id of await tx.objectStore('events').getAllKeys()) await this.mark(tx, 'event', id);
-    for (const id of await tx.objectStore('screenshots').getAllKeys()) await this.mark(tx, 'screenshot', id);
+    for (const id of await tx.objectStore('screenshots').getAllKeys())
+      await this.mark(tx, 'screenshot', id);
     await tx.done;
   }
 
@@ -159,6 +176,87 @@ export class LinkStore {
   }
 
   // ---- liens ----
+
+  async applyImport(changes: {
+    links: Link[];
+    events: LinkEvent[];
+    screenshots: { id: string; blob: Blob }[];
+    expected: Map<string, string | null>;
+  }): Promise<void> {
+    const tx = this.db.transaction(['links', 'events', 'screenshots', 'dirty'], 'readwrite');
+    try {
+      for (const [id, stamp] of changes.expected) {
+        const current = await tx.objectStore('links').get(id);
+        if ((current?.updatedAt ?? null) !== stamp)
+          throw new Error(
+            'Des liens ont changé depuis l’aperçu. Analyse à nouveau l’archive avant de l’appliquer.',
+          );
+      }
+      for (const s of changes.screenshots) {
+        await tx.objectStore('screenshots').put(s);
+        await this.mark(tx, 'screenshot', s.id);
+      }
+      for (const l of changes.links) {
+        await tx.objectStore('links').put(l);
+        await this.mark(tx, 'link', l.id);
+      }
+      for (const e of changes.events) {
+        await tx.objectStore('events').add(e);
+        await this.mark(tx, 'event', e.id);
+      }
+      await tx.done;
+    } catch (e) {
+      try {
+        tx.abort();
+      } catch {}
+      await tx.done.catch(() => {});
+      throw e;
+    }
+  }
+
+  /** Atomic read/modify/write: every selected link and its dirty mark commit together. */
+  async mutateLinks(ids: readonly string[], change: (link: Link) => Link): Promise<number> {
+    const tx = this.db.transaction(['links', 'events', 'dirty'], 'readwrite');
+    let count = 0;
+    try {
+      for (const id of new Set(ids)) {
+        const before = await tx.objectStore('links').get(id);
+        if (!before || before.deletedAt !== null) continue;
+        const after = change(withDefaults(before));
+        if (JSON.stringify(before) === JSON.stringify(after)) continue;
+        after.updatedAt = new Date(
+          Math.max(Date.now(), Date.parse(before.updatedAt) + 1),
+        ).toISOString();
+        await tx.objectStore('links').put(after);
+        await this.mark(tx, 'link', id);
+        for (const [type, tags] of [
+          ['tagged', after.tags.filter((t) => !before.tags.includes(t))],
+          ['untagged', before.tags.filter((t) => !after.tags.includes(t))],
+        ] as const) {
+          for (const tag of tags) {
+            const event: LinkEvent = {
+              id: crypto.randomUUID(),
+              linkId: id,
+              type,
+              payload: { tag },
+              at: after.updatedAt,
+            };
+            await tx.objectStore('events').add(event);
+            await this.mark(tx, 'event', event.id);
+          }
+        }
+        count++;
+      }
+      await tx.done;
+      return count;
+    } catch (e) {
+      try {
+        tx.abort();
+      } catch {}
+      await tx.done.catch(() => {});
+      throw e;
+    }
+  }
 
   /** Crée ou remplace l'enregistrement entier (modification locale : à pousser). */
   async putLink(link: Link): Promise<void> {
@@ -255,7 +353,11 @@ export class LinkStore {
   /** Remplacement complet, atomique (restauration d'une sauvegarde). Tout est à pousser ensuite. Seul chemin de suppression d'événements. */
   async replaceAll(links: Link[], events: LinkEvent[]): Promise<void> {
     const tx = this.db.transaction(['links', 'events', 'dirty'], 'readwrite');
-    await Promise.all([tx.objectStore('links').clear(), tx.objectStore('events').clear(), tx.objectStore('dirty').clear()]);
+    await Promise.all([
+      tx.objectStore('links').clear(),
+      tx.objectStore('events').clear(),
+      tx.objectStore('dirty').clear(),
+    ]);
     for (const l of links) {
       await tx.objectStore('links').put(l);
       await this.mark(tx, 'link', l.id);
@@ -268,7 +370,10 @@ export class LinkStore {
   }
 
   /** Fusion : le plus récent gagne par lien (updatedAt) ; événements ajoutés s'ils sont absents. Ce qui est écrit est à pousser. */
-  async mergeAll(links: Link[], events: LinkEvent[]): Promise<{ linksWritten: number; eventsAdded: number }> {
+  async mergeAll(
+    links: Link[],
+    events: LinkEvent[],
+  ): Promise<{ linksWritten: number; eventsAdded: number }> {
     const tx = this.db.transaction(['links', 'events', 'dirty'], 'readwrite');
     let linksWritten = 0;
     let eventsAdded = 0;

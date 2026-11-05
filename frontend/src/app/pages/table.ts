@@ -19,12 +19,16 @@ export class TablePage {
   protected readonly categoryOverride = signal<string | null>(null);
 
   // withComponentInputBinding lie `undefined` (pas '') quand le paramètre d'URL est absent.
-  protected readonly categoryFilter = computed(() => this.categoryOverride() ?? this.category() ?? '');
-  protected readonly categories = computed(() => categoryCounts(this.svc.links()));
+  protected readonly categoryFilter = computed(
+    () => this.categoryOverride() ?? this.category() ?? '',
+  );
+  protected readonly categories = computed(() => categoryCounts(this.svc.activeLinks()));
 
   protected readonly rows = computed(() => {
     const cat = this.categoryFilter();
-    return cat === '' ? this.svc.links() : this.svc.links().filter((l) => l.category === (cat === '_' ? '' : cat));
+    return cat === ''
+      ? this.svc.activeLinks()
+      : this.svc.activeLinks().filter((l) => l.category === (cat === '_' ? '' : cat));
   });
 
   protected val(e: Event): string {

@@ -2,6 +2,7 @@
 export type LinkKind = 'link' | 'site';
 
 export interface Link {
+  library?: import('./library').LibraryData;
   id: string;
   url: string;
   title: string;
@@ -26,12 +27,7 @@ export interface Link {
 }
 
 export type EventType =
-  | 'created'
-  | 'tagged'
-  | 'untagged'
-  | 'note_edited'
-  | 'screenshot_added'
-  | 'revisited';
+  'created' | 'tagged' | 'untagged' | 'note_edited' | 'screenshot_added' | 'revisited';
 
 export const EVENT_TYPES: readonly EventType[] = [
   'created',

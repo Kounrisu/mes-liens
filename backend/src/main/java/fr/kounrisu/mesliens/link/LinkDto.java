@@ -18,14 +18,15 @@ public record LinkDto(
         @NotNull @Size(max = 50) List<@NotBlank @Size(max = 64) String> tags,
         @NotNull @Size(max = 20000) String note,
         UUID screenshotId,
-        @Size(max = 64) String category,
+        @Size(max = 200) String category,
         @Size(max = 100) String source,
         @Min(1) @Max(100000) Integer focusRank,
         @Pattern(regexp = "link|site") String kind,
         UUID parentId,
         @NotNull Instant createdAt,
         @NotNull Instant updatedAt,
-        Instant deletedAt) {
+        Instant deletedAt,
+        @jakarta.validation.Valid LibraryData library) {
 
     /** Tolérant : un ancien client qui n'envoie pas category/source reçoit une chaîne vide (pas une erreur). */
     public LinkDto {

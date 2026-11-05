@@ -1,31 +1,46 @@
 @if (filters()) {
-<div class="filters">
-  <input type="search" placeholder="Rechercher (titre, url, note, étiquette)…" aria-label="Rechercher"
-         [value]="query()" (input)="setQuery(val($event))" />
-  @if (query() || activeTags().length) {
-    <button type="button" class="ghost" (click)="resetFilters()">Effacer les filtres</button>
-  }
-</div>
-@if (allTags().length) {
-  <ul class="tags" aria-label="Filtrer par étiquette">
-    @for (t of allTags(); track t.tag) {
-      <li>
-        <button type="button" class="tag" [class.on]="activeTags().includes(t.tag)"
-                [attr.aria-pressed]="activeTags().includes(t.tag)" (click)="toggleTag(t.tag)">
-          {{ t.tag }} <small>{{ t.count }}</small>
-        </button>
-      </li>
+  <div class="filters">
+    <input
+      type="search"
+      placeholder="Rechercher (titre, url, note, étiquette)…"
+      aria-label="Rechercher"
+      [value]="query()"
+      (input)="setQuery(val($event))"
+    />
+    @if (query() || activeTags().length) {
+      <button type="button" class="ghost" (click)="resetFilters()">Effacer les filtres</button>
     }
-  </ul>
-}
+  </div>
+  @if (allTags().length) {
+    <ul class="tags" aria-label="Filtrer par étiquette">
+      @for (t of allTags(); track t.tag) {
+        <li>
+          <button
+            type="button"
+            class="tag"
+            [class.on]="activeTags().includes(t.tag)"
+            [attr.aria-pressed]="activeTags().includes(t.tag)"
+            (click)="toggleTag(t.tag)"
+          >
+            {{ t.tag }} <small>{{ t.count }}</small>
+          </button>
+        </li>
+      }
+    </ul>
+  }
 
-<p class="meta" aria-live="polite">{{ visible().length }} résultat{{ visible().length > 1 ? 's' : '' }}</p>
+  <p class="meta" aria-live="polite">
+    {{ visible().length }} résultat{{ visible().length > 1 ? 's' : '' }}
+  </p>
 }
 
 @if (!svc.ready()) {
   <p>Chargement…</p>
 } @else if (links().length === 0 && sync.status() === 'unconfigured') {
-  <p class="empty">Aucun lien sur cet appareil. Tes liens sont sur le serveur : ouvre la page Admin (section « Technique ») pour connecter cet appareil.</p>
+  <p class="empty">
+    Aucun lien sur cet appareil. Tes liens sont sur le serveur : ouvre la page Admin (section «
+    Technique ») pour connecter cet appareil.
+  </p>
 } @else if (links().length === 0) {
   <p class="empty">Aucun lien ici pour l'instant.</p>
 } @else if (visible().length === 0) {
@@ -36,34 +51,80 @@
   @for (l of shown(); track l.id) {
     <li class="card link">
       @if (l.screenshotId && svc.screenshotUrls()[l.screenshotId]; as src) {
-        <a [href]="l.url" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">
+        <a
+          [href]="l.url"
+          target="_blank"
+          rel="noopener noreferrer"
+          tabindex="-1"
+          aria-hidden="true"
+        >
           <img class="thumb" [src]="src" alt="" loading="lazy" />
         </a>
       }
+      <app-link-insight [link]="l" />
       <div class="body">
-        <h3><a [href]="l.url" target="_blank" rel="noopener noreferrer">{{ l.title }}</a> @if (l.kind === 'site') { <span class="badge">site</span> }</h3>
+        <h3>
+          <a [href]="l.url" target="_blank" rel="noopener noreferrer">{{ l.title }}</a>
+          @if (l.kind === 'site') {
+            <span class="badge">site</span>
+          }
+        </h3>
         <p class="meta">
           {{ l.source || l.domain }} · {{ l.createdAt | date: 'dd/MM/yyyy HH:mm' }}
-          @if (l.category) { · <a class="badge cat" [routerLink]="['/category', l.category]">{{ l.category }}</a> }
+          @if (l.category) {
+            · <a class="badge cat" [routerLink]="['/category', l.category]">{{ l.category }}</a>
+          }
         </p>
-        @if (l.note) { <p class="note">{{ l.note }}</p> }
+        @if (l.note) {
+          <p class="note">{{ l.note }}</p>
+        }
         @if (l.tags.length) {
           <ul class="tags">
             @for (t of l.tags; track t) {
-              <li><button type="button" class="tag" [class.on]="activeTags().includes(t)" (click)="toggleTag(t)">{{ t }}</button></li>
+              <li>
+                <button
+                  type="button"
+                  class="tag"
+                  [class.on]="activeTags().includes(t)"
+                  (click)="toggleTag(t)"
+                >
+                  {{ t }}
+                </button>
+              </li>
             }
           </ul>
         }
         <div class="row">
-          <a class="btn small" [routerLink]="['/link', l.id]" [attr.aria-label]="'Ouvrir la fiche de ' + l.title">Ouvrir</a>
+          <a
+            class="btn small"
+            [routerLink]="['/link', l.id]"
+            [attr.aria-label]="'Ouvrir la fiche de ' + l.title"
+            >Ouvrir</a
+          >
           <app-focus-button [link]="l" />
-          <a class="btn small" [routerLink]="['/link', l.id, 'edit']" [attr.aria-label]="'Modifier ' + l.title">Modifier</a>
-          <button type="button" class="ghost danger small" (click)="remove(l)" [attr.aria-label]="'Supprimer ' + l.title">Supprimer</button>
+          <a
+            class="btn small"
+            [routerLink]="['/link', l.id, 'edit']"
+            [attr.aria-label]="'Modifier ' + l.title"
+            >Modifier</a
+          >
+          <button
+            type="button"
+            class="ghost danger small"
+            (click)="remove(l)"
+            [attr.aria-label]="'Supprimer ' + l.title"
+          >
+            Supprimer
+          </button>
         </div>
       </div>
     </li>
   }
 </ul>
 @if (visible().length > shown().length) {
-  <p class="more"><button type="button" (click)="more()">Afficher plus ({{ visible().length - shown().length }} restants)</button></p>
+  <p class="more">
+    <button type="button" (click)="more()">
+      Afficher plus ({{ visible().length - shown().length }} restants)
+    </button>
+  </p>
 }

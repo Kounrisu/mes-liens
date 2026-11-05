@@ -104,6 +104,14 @@ Puis dans l'app : « Synchronisation entre appareils » → URL `https://links.s
 ## Étape 8 — Libérer du disque (optionnel, après accord)
 `docker builder prune` supprime uniquement le cache de build inutilisé (~5,5 Go récupérables sur 14 Go) ; ne touche ni conteneurs ni volumes ni images utilisées.
 
+## Bibliothèque de connaissances (V6)
+
+Le périmètre et le déploiement sont autorisés le 5 novembre 2026. Construire/tester localement API, Angular et l'image `mesliens-previews:learning-v1` (`worker/Dockerfile`). Stager le JAR sous `releases/learning-v1/mes-liens-api.jar`, le build Angular sous `releases/learning-v1/browser`, le compose sous `releases/learning-v1/docker-compose.prod.yml`, puis charger l'image Docker sur le VPS. Exécuter `infra/deploy-learning-release.sh` sur ce serveur.
+
+Le script sauvegarde base/captures et anciens fichiers, remplace l'API et ajoute le worker, attend l'API, copie le front en place et vérifie le maintien de l'authentification. Restauration automatique des anciens fichiers en cas d'échec ; migration additive compatible avec l'ancienne API. Les anciens fichiers statiques hachés sont conservés pour les sessions PWA déjà ouvertes. Aucun changement au proxy partagé ni aux autres applications.
+
+Le worker traite progressivement les liens (pause de 45 s entre tâches, maximum 512 Mo et 0,5 CPU) sans port exposé. Voir `worker/README.md`. Les images et `link_insights` sont couverts par les sauvegardes serveur existantes.
+
 ## Mises à jour ultérieures
 Refaire les étapes 1, 2 (jar et `dist` seulement) puis 4. Les migrations Flyway s'appliquent au démarrage de l'API.
 **Avant** de déployer une version qui change le schéma : lancer `backup.sh`.

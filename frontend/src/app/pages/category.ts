@@ -2,6 +2,7 @@ import { Component, computed, inject, input } from '@angular/core';
 import { UNCATEGORIZED } from '../core/catalog';
 import { LinkService } from '../core/link.service';
 import { LinkViews } from '../shared/link-views';
+import { categoryWithin, libraryOf } from '../core/library';
 
 /** Une page par catégorie. `_` désigne les liens sans catégorie. */
 @Component({
@@ -10,7 +11,10 @@ import { LinkViews } from '../shared/link-views';
   template: `
     <main class="page">
       <section aria-labelledby="cat-h">
-        <h2 id="cat-h">{{ label() }} <small class="meta">· {{ links().length }} lien{{ links().length > 1 ? 's' : '' }}</small></h2>
+        <h2 id="cat-h">
+          {{ label() }}
+          <small class="meta">· {{ links().length }} lien{{ links().length > 1 ? 's' : '' }}</small>
+        </h2>
         <app-link-views [links]="links()" />
       </section>
     </main>
@@ -24,5 +28,9 @@ export class CategoryPage {
 
   protected readonly category = computed(() => (this.name() === '_' ? '' : this.name()));
   protected readonly label = computed(() => this.category() || UNCATEGORIZED);
-  protected readonly links = computed(() => this.svc.links().filter((l) => l.category === this.category()));
+  protected readonly links = computed(() =>
+    this.svc
+      .links()
+      .filter((l) => !libraryOf(l).archived && categoryWithin(l.category, this.category())),
+  );
 }

@@ -1,14 +1,33 @@
-import { Component, HostListener, OnInit, computed, effect, inject, input, output, signal } from '@angular/core';
+import {
+  Component,
+  HostListener,
+  OnInit,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { findSiteForUrl, sitesOf } from '../core/sites';
-import { YOUTUBE_CATEGORIES, categoryCounts, detectSource, normalizeCategory } from '../core/catalog';
+import {
+  YOUTUBE_CATEGORIES,
+  categoryCounts,
+  detectSource,
+  normalizeCategory,
+} from '../core/catalog';
 import { isImage, shrinkImage } from '../core/image';
 import { LinkService } from '../core/link.service';
 import { normalizeUrl, parseTags, tagCounts } from '../core/link-utils';
 import { Link } from '../core/models';
+import { libraryOf, duplicatesOf } from '../core/library';
+import { LibraryEditor } from './library-editor';
+import { RouterLink } from '@angular/router';
 
 /** Formulaire unique pour créer (sans `link`) et modifier (avec `link`) : mêmes champs, même validation. */
 @Component({
   selector: 'app-link-form',
+  imports: [LibraryEditor, RouterLink],
   templateUrl: './link-form.html',
 })
 export class LinkForm implements OnInit {
@@ -28,6 +47,10 @@ export class LinkForm implements OnInit {
   protected readonly error = signal('');
   protected readonly dragging = signal(false);
   protected readonly busy = signal(false);
+  protected readonly library = signal(libraryOf({}));
+  protected readonly duplicates = computed(() =>
+    duplicatesOf(this.svc.links(), normalizeUrl(this.url()) ?? '', this.link()?.id),
+  );
 
   protected readonly isSite = signal(false);
   protected readonly parentId = signal('');
@@ -38,10 +61,18 @@ export class LinkForm implements OnInit {
   /** ?site=<id> (bouton « Ajouter un lien à ce site ») : appliqué dès que les liens sont chargés. */
   private pendingSite = '';
 
-  protected readonly sites = computed(() => sitesOf(this.svc.links()).filter((s) => s.id !== this.link()?.id));
-  private readonly suggestedSite = computed(() => findSiteForUrl(this.sites(), normalizeUrl(this.url())));
+  protected readonly sites = computed(() =>
+    sitesOf(this.svc.links()).filter((s) => s.id !== this.link()?.id),
+  );
+  private readonly suggestedSite = computed(() =>
+    findSiteForUrl(this.sites(), normalizeUrl(this.url())),
+  );
 
   constructor() {
+    effect(() => {
+      if (this.svc.ready() && this.link()?.screenshotId)
+        void this.svc.ensureScreenshot(this.link()!.screenshotId!);
+    });
     effect(() => {
       if (!this.svc.ready()) return;
       // Arrivée par « Ajouter un lien à ce site » : le site et son adresse (à compléter) sont préremplis.
@@ -53,11 +84,14 @@ export class LinkForm implements OnInit {
       }
       // Sinon, propose le site qui correspond à l'adresse saisie, tant que l'utilisateur n'a pas choisi lui-même.
       const s = this.suggestedSite();
-      if (s && !this.parentTouched && !this.isSite() && this.parentId() === '') this.chooseParent(s.id);
+      if (s && !this.parentTouched && !this.isSite() && this.parentId() === '')
+        this.chooseParent(s.id);
     });
   }
 
-  protected readonly categories = computed(() => [...new Set([...categoryCounts(this.svc.links()).map((c) => c.category), ...YOUTUBE_CATEGORIES])]);
+  protected readonly categories = computed(() => [
+    ...new Set([...categoryCounts(this.svc.links()).map((c) => c.category), ...YOUTUBE_CATEGORIES]),
+  ]);
   protected readonly knownTags = computed(() => tagCounts(this.svc.links()).map((t) => t.tag));
   protected readonly currentShot = computed(() => {
     const id = this.link()?.screenshotId;
@@ -67,6 +101,7 @@ export class LinkForm implements OnInit {
   ngOnInit(): void {
     const l = this.link();
     if (l) {
+      this.library.set(libraryOf(l));
       this.url.set(l.url);
       this.title.set(l.title);
       this.tagsInput.set(l.tags.join(', '));
@@ -191,6 +226,12 @@ export class LinkForm implements OnInit {
 
   protected async submit(e: Event): Promise<void> {
     e.preventDefault();
+    if (
+      !this.link() &&
+      this.duplicates().length &&
+      !confirm('Cette adresse est déjà enregistrée. Créer quand même un autre lien ?')
+    )
+      return;
     const url = normalizeUrl(this.url());
     if (!url) {
       this.error.set('URL invalide : seules les adresses http(s) sont acceptées.');
@@ -199,6 +240,7 @@ export class LinkForm implements OnInit {
     this.busy.set(true);
     try {
       const fields = {
+        library: this.library(),
         url,
         title: this.title(),
         tags: parseTags(this.tagsInput()),
@@ -227,6 +269,7 @@ export class LinkForm implements OnInit {
   }
 
   private reset(): void {
+    this.library.set(libraryOf({}));
     this.url.set('');
     this.title.set('');
     this.tagsInput.set('');

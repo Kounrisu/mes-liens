@@ -1,5 +1,16 @@
 # Journal
 
+## 2026-11-05 — Bibliothèque de connaissances : implémentation élargie
+- Autorisation utilisateur : sauvegarder l'analyse, commiter, taguer, implémenter et déployer ; choix explicite du périmètre élargi, imports sociaux ultérieurs. Analyse sauvegardée dans `docs/roadmap-learning-library.md` (commit `4fe8cc1`), point de départ tagué `baseline-before-learning-library`.
+- Angular conservé. Bibliothèque : À trier indépendant des catégories, archives réversibles, collections, catégories par chemins avec sous-catégories, renommage/fusion de catégories et tags, doublons conservateurs, progression, notes de connaissances, points de reprise, prochaines actions et dates de révision. Recherche élargie aux sources, catégories et apprentissage. Actions en lot dans le tableau.
+- Données `library` validées et synchronisées ; migration PostgreSQL V6 additive ; un ancien client qui omet `library` ne l'efface pas. JSON et ZIP conservent les nouvelles données. Import ZIP transactionnel avec refus d'un aperçu obsolète ; avertissement sur les doublons d'URL. Les catégories existantes ne sont pas reclassées automatiquement.
+- Aperçus et disponibilité : table distincte, file avec leases et rejet des résultats d'une ancienne URL ; captures automatiques séparées des captures manuelles. Worker Chromium unique, anonyme, limité à 512 Mo/0,5 CPU, contrôle progressif toutes les 45 secondes. Recontrôle mensuel (2 jours après indisponibilité/404), jamais de suppression automatique. Documentation réseau et limites : `worker/README.md`.
+- Captures manuelles chargées à la demande au lieu de charger toute la photothèque au démarrage ; URL mémoire libérées quand la capture n'est plus référencée.
+- Vérifications : 128 tests front réussis, 2 ignorés ; 32 tests backend PostgreSQL réussis ; 2 tests réseau worker réussis ; capture réelle de example.com dans les contraintes Docker (JPEG 46761 octets), adresse privée refusée. Test de redirection externe via httpbin bloqué par ce site avant la redirection (aucune conclusion sur ce test externe). Navigateur : création avec apprentissage, classement en lot, sortie de l'inbox, archive/restauration, connaissances. Débordement mobile trouvé puis corrigé (390 px de contenu pour 390 px de viewport).
+- Design : composants/CSS Angular existants réutilisés ; recherches 21st indisponibles, revue 21st des nouveaux composants sans résultat bloquant. Hook gitleaks exécuté en restaurant le chemin de l'exécutable installé.
+- Préparation déploiement : image worker construite sur le PC et transférée, sauvegarde/restauration via `infra/deploy-learning-release.sh`. État effectif consigné après contrôles serveur.
+- Limites : imports sociaux, OCR, suggestions IA et notifications de révision ultérieurs. Notes de connaissances rattachées aux ressources et regroupées par collections ; pas d'éditeur de wiki indépendant. Les captures ne contournent pas les connexions ou protections des sites.
+
 ## 2026-11-05 — Création du dépôt
 - Squelette créé : frontend/, backend/, infra/, docs/.
 - Phase 0 (découverte VPS) à faire, aucun code.

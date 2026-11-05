@@ -41,6 +41,10 @@ public class LinkEntity {
     @Column(nullable = false)
     private String source;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(nullable = false, columnDefinition = "jsonb")
+    private LibraryData library = LibraryData.empty();
+
     @Column(nullable = false)
     private String kind;
 
@@ -82,6 +86,8 @@ public class LinkEntity {
         this.screenshotId = d.screenshotId();
         this.category = d.category();
         this.source = d.source();
+        // Older installed PWAs omit this field: preserve new learning data.
+        if (d.library() != null) this.library = d.library();
         this.focusRank = d.focusRank();
         this.kind = d.kind();
         this.parentId = d.parentId();
@@ -96,7 +102,7 @@ public class LinkEntity {
     }
 
     public LinkDto toDto() {
-        return new LinkDto(id, url, title, domain, java.util.List.of(tags), note, screenshotId, category, source, focusRank, kind, parentId, createdAt, updatedAt, deletedAt);
+        return new LinkDto(id, url, title, domain, java.util.List.of(tags), note, screenshotId, category, source, focusRank, kind, parentId, createdAt, updatedAt, deletedAt, library);
     }
 
     public Long getServerSeq() { return serverSeq; }

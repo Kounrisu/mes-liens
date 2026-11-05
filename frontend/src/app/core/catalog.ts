@@ -1,10 +1,25 @@
 import { Link } from './models';
 
 /** Catégories proposées d'office ; l'utilisateur peut en saisir d'autres librement (elles apparaissent alors dans le menu). */
-export const DEFAULT_CATEGORIES = ['formation', 'manga', 'anime', 'utile', 'emploi', 'veille', 'autre'] as const;
+export const DEFAULT_CATEGORIES = [
+  'formation',
+  'manga',
+  'anime',
+  'utile',
+  'emploi',
+  'veille',
+  'autre',
+] as const;
 
 /** Sections de la page YouTube (catégories libres comme les autres : elles se choisissent dans le formulaire). */
-export const YOUTUBE_CATEGORIES = ['formation', 'music', 'korean bands', 'korean learning', 'japanese learning', 'japanese bands'] as const;
+export const YOUTUBE_CATEGORIES = [
+  'formation',
+  'music',
+  'korean bands',
+  'korean learning',
+  'japanese learning',
+  'japanese bands',
+] as const;
 
 /** Libellé affiché pour une catégorie vide. */
 export const UNCATEGORIZED = 'non classé';
@@ -54,7 +69,13 @@ export function detectSource(url: string): { source: string; category: string } 
 
 /** Normalise une catégorie saisie : minuscules, espaces réduits, 64 caractères max. */
 export function normalizeCategory(raw: string): string {
-  return raw.trim().toLowerCase().replace(/\s+/g, ' ').slice(0, 64);
+  return raw
+    .toLowerCase()
+    .split(/\s*\/\s*/)
+    .map((s) => s.trim().replace(/\s+/g, ' '))
+    .filter(Boolean)
+    .join(' / ')
+    .slice(0, 200);
 }
 
 /** Catégories par défaut + celles réellement utilisées, avec le nombre de liens (les vides à 0 restent proposées). */
@@ -64,8 +85,12 @@ export function categoryCounts(links: Link[]): { category: string; count: number
   const rest = [...counts].map(([category, count]) => ({ category, count }));
   const defaults = DEFAULT_CATEGORIES as readonly string[];
   return [
-    ...rest.filter((c) => defaults.includes(c.category)).sort((a, b) => defaults.indexOf(a.category) - defaults.indexOf(b.category)),
-    ...rest.filter((c) => !defaults.includes(c.category)).sort((a, b) => a.category.localeCompare(b.category)),
+    ...rest
+      .filter((c) => defaults.includes(c.category))
+      .sort((a, b) => defaults.indexOf(a.category) - defaults.indexOf(b.category)),
+    ...rest
+      .filter((c) => !defaults.includes(c.category))
+      .sort((a, b) => a.category.localeCompare(b.category)),
   ];
 }
 
@@ -100,11 +125,17 @@ export interface YoutubeSection {
 }
 
 /** Liens YouTube répartis dans les sections demandées (toujours toutes présentes, même vides), puis « autres » (hors liste ou non classés). */
-export function groupYoutube(links: readonly Link[]): { sections: YoutubeSection[]; others: Link[] } {
+export function groupYoutube(links: readonly Link[]): {
+  sections: YoutubeSection[];
+  others: Link[];
+} {
   const yt = links.filter((l) => isYoutube(l.url));
   const wanted = YOUTUBE_CATEGORIES as readonly string[];
   return {
-    sections: YOUTUBE_CATEGORIES.map((category) => ({ category, links: yt.filter((l) => l.category === category) })),
+    sections: YOUTUBE_CATEGORIES.map((category) => ({
+      category,
+      links: yt.filter((l) => l.category === category),
+    })),
     others: yt.filter((l) => !wanted.includes(l.category)),
   };
 }

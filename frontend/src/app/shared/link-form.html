@@ -1,53 +1,110 @@
 <form (submit)="submit($event)">
-  <label>URL
-    <input type="text" inputmode="url" autocomplete="off" placeholder="https://…" required
-           [value]="url()" (input)="setUrl(val($event))" />
+  <label
+    >URL
+    <input
+      type="text"
+      inputmode="url"
+      autocomplete="off"
+      placeholder="https://…"
+      required
+      [value]="url()"
+      (input)="setUrl(val($event))"
+    />
   </label>
-  <label>Titre <small>(optionnel)</small>
+  @if (duplicates().length) {
+    <aside class="notice" role="status">
+      Cette adresse existe déjà :
+      @for (l of duplicates(); track l.id) {
+        <a [routerLink]="['/link', l.id]">{{ l.title }}</a>
+      }
+    </aside>
+  }
+  <label
+    >Titre <small>(optionnel)</small>
     <input type="text" [value]="title()" (input)="title.set(val($event))" />
   </label>
 
   <label class="check">
-    <input type="checkbox" [checked]="isSite()" (change)="setSiteFlag($any($event.target).checked)" />
-    <span>C'est un site / une plateforme <small>(ex. Udemy, app.ultimatecourses.com, youtube.com) : tu pourras y rattacher des liens vers ses formations</small></span>
+    <input
+      type="checkbox"
+      [checked]="isSite()"
+      (change)="setSiteFlag($any($event.target).checked)"
+    />
+    <span
+      >C'est un site / une plateforme
+      <small
+        >(ex. Udemy, app.ultimatecourses.com, youtube.com) : tu pourras y rattacher des liens vers
+        ses formations</small
+      ></span
+    >
   </label>
   @if (!isSite()) {
-    <label>Rattaché au site <small>(proposé d'après l'adresse si le site est déjà enregistré)</small>
+    <label
+      >Rattaché au site <small>(proposé d'après l'adresse si le site est déjà enregistré)</small>
       <select [value]="parentId()" (change)="pickParent(val($event))">
         <option value="" [selected]="parentId() === ''">— aucun —</option>
         @for (s of sites(); track s.id) {
-          <option [value]="s.id" [selected]="parentId() === s.id">{{ s.title }} ({{ s.domain }})</option>
+          <option [value]="s.id" [selected]="parentId() === s.id">
+            {{ s.title }} ({{ s.domain }})
+          </option>
         }
       </select>
     </label>
   }
 
   <div class="cols">
-    <label>Catégorie <small>(choisis ou saisis une nouvelle)</small>
-      <input type="text" list="form-categories" autocomplete="off" placeholder="formation, manga, anime, utile…"
-             [value]="category()" (input)="setCategory(val($event))" />
+    <label
+      >Catégorie <small>Utilise / pour les sous-catégories : développement / angular</small>
+      <input
+        type="text"
+        list="form-categories"
+        autocomplete="off"
+        placeholder="formation, manga, anime, utile…"
+        [value]="category()"
+        (input)="setCategory(val($event))"
+      />
       <datalist id="form-categories">
-        @for (c of categories(); track c) { <option [value]="c"></option> }
+        @for (c of categories(); track c) {
+          <option [value]="c"></option>
+        }
       </datalist>
     </label>
-    <label>Source <small>(site : Udemy, Frontend Masters… détectée si connue)</small>
+    <label
+      >Source <small>(site : Udemy, Frontend Masters… détectée si connue)</small>
       <input type="text" autocomplete="off" [value]="source()" (input)="setSource(val($event))" />
     </label>
   </div>
 
-  <label>Étiquettes <small>(séparées par des virgules)</small>
-    <input type="text" list="form-tags" autocomplete="off" placeholder="angular, veille, emploi"
-           [value]="tagsInput()" (input)="tagsInput.set(val($event))" />
+  <label
+    >Étiquettes <small>(séparées par des virgules)</small>
+    <input
+      type="text"
+      list="form-tags"
+      autocomplete="off"
+      placeholder="angular, veille, emploi"
+      [value]="tagsInput()"
+      (input)="tagsInput.set(val($event))"
+    />
     <datalist id="form-tags">
-      @for (t of knownTags(); track t) { <option [value]="t"></option> }
+      @for (t of knownTags(); track t) {
+        <option [value]="t"></option>
+      }
     </datalist>
   </label>
-  <label>Note
+  <label
+    >Pourquoi je garde ce lien / notes
     <textarea rows="3" [value]="note()" (input)="note.set(val($event))"></textarea>
   </label>
 
-  <div class="drop" [class.over]="dragging()"
-       (dragover)="onDragOver($event)" (dragleave)="dragging.set(false)" (drop)="onDrop($event)">
+  <app-library-editor [value]="library()" (changed)="library.set($event)" />
+
+  <div
+    class="drop"
+    [class.over]="dragging()"
+    (dragover)="onDragOver($event)"
+    (dragleave)="dragging.set(false)"
+    (drop)="onDrop($event)"
+  >
     @if (pending(); as p) {
       <img [src]="p.preview" alt="Aperçu de la nouvelle capture" />
       <button type="button" class="ghost" (click)="clearPending()">Annuler cette capture</button>
@@ -57,12 +114,22 @@
       <p>ou colle / glisse une autre image pour la remplacer</p>
     } @else {
       <p>Colle une capture (Ctrl/Cmd + V), glisse une image ici,</p>
-      <label class="ghost btn">ou choisis un fichier
-        <input type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden (change)="onPick($event)" />
+      <label class="ghost btn"
+        >ou choisis un fichier
+        <input
+          type="file"
+          accept="image/png,image/jpeg,image/webp,image/gif"
+          hidden
+          (change)="onPick($event)"
+        />
       </label>
     }
   </div>
 
-  @if (error()) { <p class="error" role="alert">{{ error() }}</p> }
-  <button type="submit" class="primary" [disabled]="!svc.ready() || busy()">{{ link() ? 'Enregistrer les modifications' : 'Enregistrer' }}</button>
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+  <button type="submit" class="primary" [disabled]="!svc.ready() || busy()">
+    {{ link() ? 'Enregistrer les modifications' : 'Enregistrer' }}
+  </button>
 </form>
