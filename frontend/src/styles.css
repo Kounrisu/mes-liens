@@ -103,3 +103,7 @@ label.check span { display: grid; }
 .mini a { color: var(--fg); overflow-wrap: anywhere; }
 
 .more { text-align: center; }
+
+.onboarding { border-color: var(--accent); }
+.onboarding ol { margin: .5rem 0 0; padding-left: 1.2rem; display: grid; gap: .25rem; }
+.onboarding code { background: var(--bg); padding: .05rem .35rem; border-radius: .25rem; }

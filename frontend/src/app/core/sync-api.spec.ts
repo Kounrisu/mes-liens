@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Link } from './models';
-import { HttpSyncApi, isoMs, validateServerUrl } from './sync-api';
+import { HttpSyncApi, isoMs, suggestedServerUrl, validateServerUrl } from './sync-api';
 import { SyncAuthError, SyncHttpError, SyncNetworkError } from './sync';
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
@@ -12,6 +12,15 @@ describe('validateServerUrl', () => {
     expect(() => validateServerUrl('http://liens.example.com')).toThrow(/HTTPS/);
     expect(() => validateServerUrl('http://localhost.evil.com')).toThrow(/HTTPS/);
     expect(() => validateServerUrl('pas une url')).toThrow();
+  });
+});
+
+describe('suggestedServerUrl', () => {
+  it('propose l’origine de la page en production (HTTPS), rien en local ni en HTTP', () => {
+    expect(suggestedServerUrl({ protocol: 'https:', hostname: 'links.sn8w.com', origin: 'https://links.sn8w.com' })).toBe('https://links.sn8w.com');
+    expect(suggestedServerUrl({ protocol: 'http:', hostname: 'localhost', origin: 'http://localhost:4300' })).toBe('');
+    expect(suggestedServerUrl({ protocol: 'https:', hostname: 'localhost', origin: 'https://localhost:4300' })).toBe('');
+    expect(suggestedServerUrl({ protocol: 'http:', hostname: 'links.sn8w.com', origin: 'http://links.sn8w.com' })).toBe('');
   });
 });
 

@@ -29,8 +29,20 @@
   @if (status()) { <p class="toast" aria-hidden="true">{{ status() }}</p> }
   @if (error()) { <p class="error banner" role="alert">{{ error() }}</p> }
 
-  <details class="card sync-panel">
-    <summary>Synchronisation entre appareils</summary>
+  @if (showOnboarding()) {
+    <section class="card onboarding" aria-labelledby="onb-h">
+      <h2 id="onb-h">Connecte cet appareil à ton serveur</h2>
+      <p>Tes liens sont enregistrés sur ton serveur (c'est ta base de données). Cet appareil n'en a pas encore de copie : c'est pourquoi la liste est vide.</p>
+      <ol>
+        <li>Vérifie l'adresse du serveur ci-dessous.</li>
+        <li>Colle ton <strong>jeton</strong> : c'est la clé d'accès à ta base (il n'y a pas de compte). Il est dans le fichier <code>.env.prod</code> du serveur.</li>
+        <li>Clique sur « Se connecter et charger mes liens ».</li>
+      </ol>
+    </section>
+  }
+
+  <details class="card sync-panel" [open]="showOnboarding()">
+    <summary>{{ notConnected() ? 'Connexion au serveur' : 'Synchronisation entre appareils' }}</summary>
     <form (submit)="connect($event)">
       <label>URL du serveur
         <input type="text" inputmode="url" autocomplete="off" placeholder="https://liens.example.com"
@@ -44,7 +56,7 @@
       @if (sync.message()) { <p class="meta" role="status">{{ sync.message() }}</p> }
       @if (sync.lastSyncAt()) { <p class="meta">Dernière synchro : {{ sync.lastSyncAt() | date: 'dd/MM/yyyy HH:mm:ss' }}</p> }
       <div class="row">
-        <button type="submit" class="primary">Enregistrer et synchroniser</button>
+        <button type="submit" class="primary">{{ notConnected() ? 'Se connecter et charger mes liens' : 'Enregistrer et synchroniser' }}</button>
         @if (sync.status() !== 'unconfigured') {
           <button type="button" (click)="sync.syncNow()">Synchroniser maintenant</button>
           <button type="button" class="ghost danger" (click)="disconnect()">Déconnecter</button>

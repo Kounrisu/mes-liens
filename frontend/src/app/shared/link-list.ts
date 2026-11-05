@@ -2,6 +2,7 @@ import { Component, computed, inject, input, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { LinkService } from '../core/link.service';
+import { SyncService } from '../core/sync.service';
 import { filterLinks, tagCounts } from '../core/link-utils';
 import { Link } from '../core/models';
 import { FocusButton } from './focus-button';
@@ -16,6 +17,7 @@ const PAGE_SIZE = 48;
 })
 export class LinkList {
   protected readonly svc = inject(LinkService);
+  protected readonly sync = inject(SyncService);
 
   readonly links = input.required<Link[]>();
   /** false : pas de recherche ni d'étiquettes (la page parente filtre elle-même). */

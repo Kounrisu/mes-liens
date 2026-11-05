@@ -4,6 +4,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { UNCATEGORIZED, categoryCounts } from './core/catalog';
 import { ImportError, LinkService } from './core/link.service';
 import { SyncService } from './core/sync.service';
+import { suggestedServerUrl } from './core/sync-api';
 
 @Component({
   imports: [DatePipe, RouterLink, RouterLinkActive, RouterOutlet],
@@ -21,6 +22,9 @@ export class App implements OnInit {
   protected readonly error = signal('');
   protected readonly status = signal('');
 
+  protected readonly notConnected = computed(() => this.sync.status() === 'unconfigured');
+  /** Appareil neuf : ni connexion au serveur, ni aucun lien local → on guide l'utilisateur au lieu d'afficher une page vide muette. */
+  protected readonly showOnboarding = computed(() => this.notConnected() && this.svc.ready() && this.svc.count() === 0);
   protected readonly categories = computed(() => categoryCounts(this.svc.links()));
   protected readonly uncategorizedCount = computed(() => this.svc.links().filter((l) => !l.category).length);
   protected readonly uncategorizedLabel = UNCATEGORIZED;
@@ -30,7 +34,8 @@ export class App implements OnInit {
   async ngOnInit(): Promise<void> {
     await this.svc.init();
     await this.sync.init();
-    this.cfgUrl.set(this.sync.serverUrl());
+    // Servie par le serveur lui-même (production) : l'API est à la même adresse, inutile de la faire saisir.
+    this.cfgUrl.set(this.sync.serverUrl() || suggestedServerUrl(window.location));
   }
 
   protected val(e: Event): string {

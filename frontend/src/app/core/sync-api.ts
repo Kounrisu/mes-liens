@@ -20,6 +20,15 @@ export function validateServerUrl(raw: string): string {
 }
 
 /**
+ * Adresse du serveur à proposer d'office : celle de la page elle-même quand l'app est servie en HTTPS par son propre serveur
+ * (en production, PWA et API partagent la même origine). Vide en développement local, où l'API est ailleurs.
+ */
+export function suggestedServerUrl(loc: { protocol: string; hostname: string; origin: string }): string {
+  const local = ['localhost', '127.0.0.1', '[::1]'].includes(loc.hostname) || loc.hostname.endsWith('.localhost');
+  return loc.protocol === 'https:' && !local ? loc.origin : '';
+}
+
+/**
  * Le serveur renvoie des dates à précision variable ("…00Z", "…00.5Z", "…00.123456Z"). Comparées comme des chaînes elles seraient
  * mal ordonnées : on les ramène toutes au format ISO à la milliseconde.
  */

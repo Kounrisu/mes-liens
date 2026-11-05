@@ -24,6 +24,8 @@
 
 @if (!svc.ready()) {
   <p>Chargement…</p>
+} @else if (links().length === 0 && sync.status() === 'unconfigured') {
+  <p class="empty">Aucun lien sur cet appareil. Tes liens sont sur le serveur : connecte cet appareil avec le panneau « Connexion au serveur », en haut de la page, pour les charger.</p>
 } @else if (links().length === 0) {
   <p class="empty">Aucun lien ici pour l'instant.</p>
 } @else if (visible().length === 0) {
