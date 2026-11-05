@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { LinkService } from '../core/link.service';
 import { LinkEvent } from '../core/models';
+import { childrenOf, siteOf } from '../core/sites';
 import { FocusButton } from '../shared/focus-button';
 
 const EVENT_LABELS: Record<LinkEvent['type'], string> = {
@@ -33,6 +34,9 @@ export class DetailPage {
     return sid ? (this.svc.screenshotUrls()[sid] ?? null) : null;
   });
   protected readonly events = signal<LinkEvent[]>([]);
+  /** Le site auquel ce lien est rattaché, et (si c'est un site) ses liens. */
+  protected readonly site = computed(() => { const l = this.link(); return l ? siteOf(this.svc.links(), l) : undefined; });
+  protected readonly children = computed(() => { const l = this.link(); return l && l.kind === 'site' ? childrenOf(this.svc.links(), l.id) : []; });
 
   constructor() {
     effect(() => {
@@ -54,7 +58,9 @@ export class DetailPage {
 
   protected async remove(): Promise<void> {
     const l = this.link();
-    if (l && confirm(`Supprimer « ${l.title} » ?`)) {
+    const n = this.children().length;
+    const extra = n ? `\n\nLes ${n} lien(s) rattaché(s) à ce site restent enregistrés, sans site.` : '';
+    if (l && confirm(`Supprimer « ${l.title} » ?${extra}`)) {
       await this.svc.remove(l.id);
       void this.router.navigate(['/table']);
     }

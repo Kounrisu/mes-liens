@@ -1,4 +1,6 @@
 /** Dates ISO 8601 UTC (ex. "2026-11-05T10:21:00.000Z"). Les id sont des UUID générés côté client. */
+export type LinkKind = 'link' | 'site';
+
 export interface Link {
   id: string;
   url: string;
@@ -13,6 +15,10 @@ export interface Link {
   source: string;
   /** Position dans la page Focus (1 = en tête). null = pas dans le focus. Deux appareils peuvent attribuer le même rang : l'ordre affiché départage. */
   focusRank: number | null;
+  /** 'site' = une plateforme (Udemy, app.ultimatecourses.com…) à laquelle on rattache des liens ; 'link' = un lien ordinaire. */
+  kind: LinkKind;
+  /** Id du site auquel ce lien est rattaché (un seul niveau : un site n'a pas de parent). null = aucun. */
+  parentId: string | null;
   createdAt: string;
   updatedAt: string;
   /** Tombstone : non nul = lien supprimé (conservé pour la synchronisation). */

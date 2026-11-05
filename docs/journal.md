@@ -73,3 +73,14 @@
 - Le tableau de bord montre : nombre en focus, total, ajoutés cette semaine, principales catégories (cliquables), puis le classement, puis 6 suggestions (derniers liens hors focus) avec bouton ☆.
 - Pas d'événement de journal pour le focus (les 6 types du cahier des charges sont inchangés).
 - Tests : API 25 ; front 76. Vérifié dans le navigateur : mise en focus depuis le tableau, classement, descente d'un rang, compteur dans le menu.
+
+## 2026-11-05 — Sites (plateformes) et liens rattachés
+- Besoin : enregistrer un site de formation (youtube.com, app.ultimatecourses.com…) puis y rattacher des liens plus précis vers ses formations.
+- **Choix de modèle** : pas de nouvelle entité. Un site est un `Link` avec `kind = 'site'` ; un lien s'y rattache via `parentId`. Un seul niveau (site → liens). Avantage : tout le reste (synchro « le plus récent gagne », export/import, tombstones, focus, catégories, capture d'écran) fonctionne sans code supplémentaire. API : migration V5 (`kind` avec CHECK, `parent_id`, sans clé étrangère). Anciens clients / exports / liens locaux : `link` / `null`.
+- **Pas de clé étrangère, volontairement** : en synchronisation, un lien peut arriver avant son site, ou son site peut être supprimé sur un autre appareil. L'affichage est donc tolérant (`siteOf` : parent absent, supprimé ou plus un site → le lien s'affiche sans site, jamais d'erreur). Supprimer un site ne supprime pas ses liens (la fiche le dit avant confirmation).
+- **Règles vérifiées côté client** (`checkHierarchy`, avant toute écriture) : pas son propre parent, un site n'a pas de parent, le parent doit exister et être un site, un site qui a des liens ne redevient pas un lien ordinaire. L'API n'applique que « pas son propre parent » et la valeur de `kind` : elle ne peut pas contrôler le reste sans bloquer la synchro (ordre d'arrivée aléatoire).
+- **Confort** : en saisissant une adresse, le site déjà enregistré qui correspond (même domaine, `www.` et sous-domaines compris, le plus précis gagne ; `notyoutube.com` ne correspond pas à `youtube.com`) est proposé ; catégorie et source du site sont reprises tant que tu n'y touches pas. Le bouton « + Ajouter un lien à ce site » ouvre le formulaire avec le site et son adresse préremplis.
+- **Pages** : `/sites` (liste des plateformes avec leurs liens), fiche d'un site (liste de ses liens + ajout), fiche d'un lien (affiche son site). Badge « site » dans les cartes et le tableau.
+- Bug trouvé par les tests : à égalité de longueur, un site « sous-domaine » battait le site exact dans la suggestion → priorité à la correspondance exacte.
+- À savoir : `source` (texte) reste indépendant du site parent : modifier le titre d'un site ne met pas à jour la `source` des liens déjà enregistrés.
+- Tests : API 26 ; front 91.

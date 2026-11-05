@@ -65,7 +65,7 @@ class FakeServer implements SyncApi {
 
 const T = (n: number) => new Date(Date.UTC(2026, 10, 5, 10, n)).toISOString(); // T(0)=10:00 … ms
 const mk = (id: string, title: string, at: number, over: Partial<Link> = {}): Link => ({
-  id, url: 'https://example.com/' + id, title, domain: 'example.com', tags: [], note: '', screenshotId: null, category: '', source: '', focusRank: null,
+  id, url: 'https://example.com/' + id, title, domain: 'example.com', tags: [], note: '', screenshotId: null, category: '', source: '', focusRank: null, kind: 'link', parentId: null,
   createdAt: T(0), updatedAt: T(at), deletedAt: null, ...over,
 });
 const ev = (id: string, linkId: string, at: string): LinkEvent => ({ id, linkId, type: 'created', payload: {}, at });

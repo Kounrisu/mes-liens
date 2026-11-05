@@ -34,6 +34,7 @@ public class LinkController {
     @PutMapping("/{id}")
     public ResponseEntity<LinkDto> put(@PathVariable UUID id, @Valid @RequestBody LinkDto body) {
         if (!id.equals(body.id())) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "id du chemin ≠ id du corps");
+        if (id.equals(body.parentId())) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "un lien ne peut pas être son propre parent");
         var result = service.upsert(body);
         return ResponseEntity.status(result.created() ? HttpStatus.CREATED : HttpStatus.OK).body(result.link());
     }

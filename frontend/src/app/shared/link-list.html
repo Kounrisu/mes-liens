@@ -39,7 +39,7 @@
         </a>
       }
       <div class="body">
-        <h3><a [href]="l.url" target="_blank" rel="noopener noreferrer">{{ l.title }}</a></h3>
+        <h3><a [href]="l.url" target="_blank" rel="noopener noreferrer">{{ l.title }}</a> @if (l.kind === 'site') { <span class="badge">site</span> }</h3>
         <p class="meta">
           {{ l.source || l.domain }} · {{ l.createdAt | date: 'dd/MM/yyyy HH:mm' }}
           @if (l.category) { · <a class="badge cat" [routerLink]="['/category', l.category]">{{ l.category }}</a> }

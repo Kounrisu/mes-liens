@@ -1,4 +1,5 @@
-import { Component, HostListener, OnInit, computed, inject, input, output, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, effect, inject, input, output, signal } from '@angular/core';
+import { findSiteForUrl, sitesOf } from '../core/sites';
 import { YOUTUBE_CATEGORIES, categoryCounts, detectSource, normalizeCategory } from '../core/catalog';
 import { isImage, shrinkImage } from '../core/image';
 import { LinkService } from '../core/link.service';
@@ -28,8 +29,33 @@ export class LinkForm implements OnInit {
   protected readonly dragging = signal(false);
   protected readonly busy = signal(false);
 
+  protected readonly isSite = signal(false);
+  protected readonly parentId = signal('');
+
   private categoryTouched = false;
   private sourceTouched = false;
+  private parentTouched = false;
+  /** ?site=<id> (bouton « Ajouter un lien à ce site ») : appliqué dès que les liens sont chargés. */
+  private pendingSite = '';
+
+  protected readonly sites = computed(() => sitesOf(this.svc.links()).filter((s) => s.id !== this.link()?.id));
+  private readonly suggestedSite = computed(() => findSiteForUrl(this.sites(), normalizeUrl(this.url())));
+
+  constructor() {
+    effect(() => {
+      if (!this.svc.ready()) return;
+      // Arrivée par « Ajouter un lien à ce site » : le site et son adresse (à compléter) sont préremplis.
+      if (this.pendingSite) {
+        const s = this.sites().find((x) => x.id === this.pendingSite);
+        this.pendingSite = '';
+        if (s) this.chooseParent(s.id, s.url);
+        return;
+      }
+      // Sinon, propose le site qui correspond à l'adresse saisie, tant que l'utilisateur n'a pas choisi lui-même.
+      const s = this.suggestedSite();
+      if (s && !this.parentTouched && !this.isSite() && this.parentId() === '') this.chooseParent(s.id);
+    });
+  }
 
   protected readonly categories = computed(() => [...new Set([...categoryCounts(this.svc.links()).map((c) => c.category), ...YOUTUBE_CATEGORIES])]);
   protected readonly knownTags = computed(() => tagCounts(this.svc.links()).map((t) => t.tag));
@@ -47,8 +73,15 @@ export class LinkForm implements OnInit {
       this.note.set(l.note);
       this.category.set(l.category);
       this.source.set(l.source);
-      this.categoryTouched = this.sourceTouched = true; // ne pas écraser ce qui est déjà enregistré
+      this.isSite.set(l.kind === 'site');
+      this.parentId.set(l.parentId ?? '');
+      this.categoryTouched = this.sourceTouched = this.parentTouched = true; // ne pas écraser ce qui est déjà enregistré
       return;
+    }
+    const site = new URLSearchParams(window.location.search).get('site');
+    if (site) {
+      this.pendingSite = site;
+      history.replaceState(null, '', window.location.pathname);
     }
     // Pré-remplissage par le bookmarklet / Raccourci iOS : ?url=…&title=… (affiché via {{ }}, jamais en HTML brut)
     const p = new URLSearchParams(window.location.search);
@@ -72,6 +105,30 @@ export class LinkForm implements OnInit {
     if (d) {
       if (!this.sourceTouched) this.source.set(d.source);
       if (!this.categoryTouched) this.category.set(d.category);
+    }
+  }
+
+  /** Choix d'un site parent (par l'utilisateur ou par suggestion). Prérempli : adresse (si fournie), catégorie et source, tant qu'on n'y a pas touché. */
+  protected chooseParent(id: string, url?: string): void {
+    this.parentId.set(id);
+    const s = this.sites().find((x) => x.id === id);
+    if (!s) return;
+    if (url && this.url() === '') this.url.set(url);
+    if (!this.categoryTouched && !this.category() && s.category) this.category.set(s.category);
+    if (!this.sourceTouched && !this.source()) this.source.set(s.title);
+  }
+
+  protected pickParent(id: string): void {
+    this.parentTouched = true;
+    if (id === '') this.parentId.set('');
+    else this.chooseParent(id);
+  }
+
+  protected setSiteFlag(checked: boolean): void {
+    this.isSite.set(checked);
+    if (checked) {
+      this.parentId.set(''); // un site n'est rattaché à rien
+      this.parentTouched = true;
     }
   }
 
@@ -148,6 +205,8 @@ export class LinkForm implements OnInit {
         note: this.note(),
         category: normalizeCategory(this.category()),
         source: this.source(),
+        kind: this.isSite() ? ('site' as const) : ('link' as const),
+        parentId: this.isSite() || this.parentId() === '' ? null : this.parentId(),
       };
       const existing = this.link();
       let result: Link;
@@ -174,7 +233,9 @@ export class LinkForm implements OnInit {
     this.note.set('');
     this.category.set('');
     this.source.set('');
-    this.categoryTouched = this.sourceTouched = false;
+    this.categoryTouched = this.sourceTouched = this.parentTouched = false;
+    this.isSite.set(false);
+    this.parentId.set('');
     this.clearPending();
   }
 }

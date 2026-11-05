@@ -4,7 +4,8 @@ import { LinkStore } from './link-store';
 import { detectSource, normalizeCategory } from './catalog';
 import { planAdd, planMove, planRemove } from './focus';
 import { domainOf } from './link-utils';
-import { Link, LinkEvent } from './models';
+import { Link, LinkEvent, LinkKind } from './models';
+import { checkHierarchy } from './sites';
 
 /** Tout ce qui se saisit sur un lien. `url` est déjà normalisé (http/https). */
 export interface LinkFields {
@@ -14,6 +15,8 @@ export interface LinkFields {
   note: string;
   category: string;
   source: string;
+  kind: LinkKind;
+  parentId: string | null;
 }
 
 export interface NewLink extends LinkFields {
@@ -51,6 +54,9 @@ export class LinkService {
 
   async add(n: NewLink): Promise<Link> {
     const store = this.need();
+    const invalid = checkHierarchy(this.links(), null, n.kind, n.parentId);
+    if (invalid) throw new Error(invalid); // avant toute écriture : rien n'est laissé à moitié fait
+    const parent = n.parentId ? this.find(n.parentId) : undefined;
     const now = new Date().toISOString();
     const id = crypto.randomUUID();
     let screenshotId: string | null = null;
@@ -58,7 +64,7 @@ export class LinkService {
       screenshotId = crypto.randomUUID();
       await store.putScreenshot(screenshotId, n.screenshot);
     }
-    // Source et catégorie : ce que l'utilisateur a saisi, sinon ce qu'on déduit du site (Udemy → formation).
+    // Source et catégorie : ce que l'utilisateur a saisi, sinon celles du site parent, sinon ce qu'on déduit de l'adresse (Udemy → formation).
     const detected = detectSource(n.url);
     const link: Link = {
       id,
@@ -68,9 +74,11 @@ export class LinkService {
       tags: n.tags,
       note: n.note.trim(),
       screenshotId,
-      category: normalizeCategory(n.category) || detected?.category || '',
-      source: n.source.trim() || detected?.source || '',
+      category: normalizeCategory(n.category) || parent?.category || detected?.category || '',
+      source: n.source.trim() || parent?.title || detected?.source || '',
       focusRank: null,
+      kind: n.kind,
+      parentId: n.kind === 'site' ? null : n.parentId,
       createdAt: now,
       updatedAt: now,
       deletedAt: null,
@@ -90,6 +98,8 @@ export class LinkService {
     const store = this.need();
     const before = await store.getLink(id);
     if (!before || before.deletedAt !== null) throw new Error('Lien introuvable (il a peut-être été supprimé sur un autre appareil).');
+    const invalid = checkHierarchy(this.links(), id, f.kind, f.parentId);
+    if (invalid) throw new Error(invalid);
 
     const now = new Date().toISOString();
     let screenshotId = before.screenshotId;
@@ -111,6 +121,8 @@ export class LinkService {
       screenshotId,
       category: normalizeCategory(f.category),
       source: f.source.trim(),
+      kind: f.kind,
+      parentId: f.kind === 'site' ? null : f.parentId,
       updatedAt: this.stampAfter(before.updatedAt),
     };
     await store.putLink(after);

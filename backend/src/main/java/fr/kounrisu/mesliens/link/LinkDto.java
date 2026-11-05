@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.List;
@@ -20,6 +21,8 @@ public record LinkDto(
         @Size(max = 64) String category,
         @Size(max = 100) String source,
         @Min(1) @Max(100000) Integer focusRank,
+        @Pattern(regexp = "link|site") String kind,
+        UUID parentId,
         @NotNull Instant createdAt,
         @NotNull Instant updatedAt,
         Instant deletedAt) {
@@ -28,5 +31,6 @@ public record LinkDto(
     public LinkDto {
         category = category == null ? "" : category.strip();
         source = source == null ? "" : source.strip();
+        kind = kind == null ? "link" : kind;
     }
 }

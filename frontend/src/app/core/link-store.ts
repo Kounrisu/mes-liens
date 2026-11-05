@@ -3,8 +3,8 @@ import { Link, LinkEvent } from './models';
 
 /** Liens écrits avant l'existence des catégories / du focus : les champs manquent dans IndexedDB. */
 function withDefaults(l: Link): Link {
-  return l.category === undefined || l.source === undefined || l.focusRank === undefined
-    ? { ...l, category: l.category ?? '', source: l.source ?? '', focusRank: l.focusRank ?? null }
+  return l.category === undefined || l.source === undefined || l.focusRank === undefined || l.kind === undefined || l.parentId === undefined
+    ? { ...l, category: l.category ?? '', source: l.source ?? '', focusRank: l.focusRank ?? null, kind: l.kind ?? 'link', parentId: l.parentId ?? null }
     : l;
 }
 

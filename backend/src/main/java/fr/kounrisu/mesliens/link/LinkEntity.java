@@ -41,6 +41,12 @@ public class LinkEntity {
     @Column(nullable = false)
     private String source;
 
+    @Column(nullable = false)
+    private String kind;
+
+    @Column(name = "parent_id")
+    private UUID parentId;
+
     @Column(name = "focus_rank")
     private Integer focusRank;
 
@@ -77,6 +83,8 @@ public class LinkEntity {
         this.category = d.category();
         this.source = d.source();
         this.focusRank = d.focusRank();
+        this.kind = d.kind();
+        this.parentId = d.parentId();
         this.createdAt = d.createdAt();
         this.updatedAt = d.updatedAt();
         this.deletedAt = d.deletedAt();
@@ -88,7 +96,7 @@ public class LinkEntity {
     }
 
     public LinkDto toDto() {
-        return new LinkDto(id, url, title, domain, java.util.List.of(tags), note, screenshotId, category, source, focusRank, createdAt, updatedAt, deletedAt);
+        return new LinkDto(id, url, title, domain, java.util.List.of(tags), note, screenshotId, category, source, focusRank, kind, parentId, createdAt, updatedAt, deletedAt);
     }
 
     public Long getServerSeq() { return serverSeq; }

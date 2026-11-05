@@ -7,6 +7,21 @@
     <input type="text" [value]="title()" (input)="title.set(val($event))" />
   </label>
 
+  <label class="check">
+    <input type="checkbox" [checked]="isSite()" (change)="setSiteFlag($any($event.target).checked)" />
+    <span>C'est un site / une plateforme <small>(ex. Udemy, app.ultimatecourses.com, youtube.com) : tu pourras y rattacher des liens vers ses formations</small></span>
+  </label>
+  @if (!isSite()) {
+    <label>Rattaché au site <small>(proposé d'après l'adresse si le site est déjà enregistré)</small>
+      <select [value]="parentId()" (change)="pickParent(val($event))">
+        <option value="" [selected]="parentId() === ''">— aucun —</option>
+        @for (s of sites(); track s.id) {
+          <option [value]="s.id" [selected]="parentId() === s.id">{{ s.title }} ({{ s.domain }})</option>
+        }
+      </select>
+    </label>
+  }
+
   <div class="cols">
     <label>Catégorie <small>(choisis ou saisis une nouvelle)</small>
       <input type="text" list="form-categories" autocomplete="off" placeholder="formation, manga, anime, utile…"

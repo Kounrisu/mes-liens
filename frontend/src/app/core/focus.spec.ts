@@ -3,7 +3,7 @@ import { focusOrder, planAdd, planMove, planRemove, renumber } from './focus';
 import { Link } from './models';
 
 const mk = (id: string, focusRank: number | null, over: Partial<Link> = {}): Link => ({
-  id, url: 'https://example.com', title: id, domain: '', tags: [], note: '', screenshotId: null, category: '', source: '', focusRank,
+  id, url: 'https://example.com', title: id, domain: '', tags: [], note: '', screenshotId: null, category: '', source: '', focusRank, kind: 'link', parentId: null,
   createdAt: '2026-11-01T00:00:00.000Z', updatedAt: '2026-11-01T00:00:00.000Z', deletedAt: null, ...over,
 });
 const obj = (m: Map<string, number | null>) => Object.fromEntries(m);

@@ -113,6 +113,29 @@ class ApiIntegrationTests {
     }
 
     @Test
+    void siteEtLienRattache_conserves_ancienClientEstUnLienSimple_valeursInvalidesRefusees() throws Exception {
+        UUID site = UUID.randomUUID(), child = UUID.randomUUID();
+        mvc.perform(authed(put("/api/links/" + site)).contentType(MediaType.APPLICATION_JSON)
+                        .content(link(site, "Ultimate Courses", "2026-11-01T10:00:00Z", null).replace("\"screenshotId\":null,", "\"screenshotId\":null,\"kind\":\"site\",")))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.kind").value("site"));
+        mvc.perform(authed(put("/api/links/" + child)).contentType(MediaType.APPLICATION_JSON)
+                        .content(link(child, "Angular", "2026-11-01T10:00:00Z", null).replace("\"screenshotId\":null,", "\"screenshotId\":null,\"kind\":\"link\",\"parentId\":\"" + site + "\",")))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.parentId").value(site.toString()));
+        // ancien client : ni kind ni parentId
+        UUID old = UUID.randomUUID();
+        mvc.perform(authed(put("/api/links/" + old)).contentType(MediaType.APPLICATION_JSON).content(link(old, "ancien", "2026-11-01T10:00:00Z", null)))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.kind").value("link")).andExpect(jsonPath("$.parentId").doesNotExist());
+        // kind inconnu, et lien parent de lui-même : refusés
+        UUID bad = UUID.randomUUID();
+        mvc.perform(authed(put("/api/links/" + bad)).contentType(MediaType.APPLICATION_JSON)
+                        .content(link(bad, "x", "2026-11-01T10:00:00Z", null).replace("\"screenshotId\":null,", "\"screenshotId\":null,\"kind\":\"dossier\",")))
+                .andExpect(status().isBadRequest());
+        mvc.perform(authed(put("/api/links/" + bad)).contentType(MediaType.APPLICATION_JSON)
+                        .content(link(bad, "x", "2026-11-01T10:00:00Z", null).replace("\"screenshotId\":null,", "\"screenshotId\":null,\"parentId\":\"" + bad + "\",")))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void leplusRecentGagne_ancienIgnore_recentRemplace() throws Exception {
         UUID id = UUID.randomUUID();
         seed(id, link(id, "v2", "2026-11-02T10:00:00Z", null));

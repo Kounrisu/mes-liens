@@ -1,5 +1,5 @@
 import { LinkStore } from './link-store';
-import { EVENT_TYPES, EXPORT_FORMAT, EXPORT_VERSION, ExportFile, Link, LinkEvent } from './models';
+import { EVENT_TYPES, EXPORT_FORMAT, EXPORT_VERSION, ExportFile, Link, LinkEvent, LinkKind } from './models';
 
 export class ImportError extends Error {}
 
@@ -82,6 +82,8 @@ function validateLink(v: unknown, i: number): Link {
     category: optString(v, 'category', where),
     source: optString(v, 'source', where),
     focusRank: optRank(v, where),
+    kind: optKind(v, where),
+    parentId: optParent(v, where),
     createdAt: date('createdAt'),
     updatedAt: date('updatedAt'),
     deletedAt: deletedAt as string | null,
@@ -124,6 +126,20 @@ function optRank(o: Record<string, unknown>, where: string): number | null {
   const v = o['focusRank'];
   if (v === undefined || v === null) return null;
   if (typeof v !== 'number' || !Number.isInteger(v) || v < 1) throw new ImportError(where + ' : « focusRank » doit être un entier positif.');
+  return v;
+}
+
+function optKind(o: Record<string, unknown>, where: string): LinkKind {
+  const v = o['kind'];
+  if (v === undefined || v === null) return 'link';
+  if (v !== 'link' && v !== 'site') throw new ImportError(where + ' : « kind » doit valoir link ou site.');
+  return v;
+}
+
+function optParent(o: Record<string, unknown>, where: string): string | null {
+  const v = o['parentId'];
+  if (v === undefined || v === null) return null;
+  if (typeof v !== 'string' || v === '') throw new ImportError(where + ' : « parentId » invalide.');
   return v;
 }
 

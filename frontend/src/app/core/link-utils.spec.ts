@@ -3,7 +3,7 @@ import { domainOf, filterLinks, normalizeUrl, parseTags, tagCounts } from './lin
 import { Link } from './models';
 
 const mk = (id: string, over: Partial<Link>): Link => ({
-  id, url: 'https://example.com', title: '', domain: '', tags: [], note: '', screenshotId: null, category: '', source: '', focusRank: null,
+  id, url: 'https://example.com', title: '', domain: '', tags: [], note: '', screenshotId: null, category: '', source: '', focusRank: null, kind: 'link', parentId: null,
   createdAt: '2026-11-01T00:00:00.000Z', updatedAt: '2026-11-01T00:00:00.000Z', deletedAt: null, ...over,
 });
 

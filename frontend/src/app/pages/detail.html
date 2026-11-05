@@ -17,6 +17,12 @@
       }
 
       <dl class="facts">
+        <dt>Type</dt>
+        <dd>{{ l.kind === 'site' ? 'Site / plateforme' : 'Lien' }}</dd>
+        @if (site(); as s) {
+          <dt>Site</dt>
+          <dd><a [routerLink]="['/link', s.id]">{{ s.title }}</a> <span class="meta">({{ s.domain }})</span></dd>
+        }
         <dt>Adresse</dt>
         <dd><a [href]="l.url" target="_blank" rel="noopener noreferrer">{{ l.url }}</a></dd>
         <dt>Source</dt>
@@ -32,6 +38,24 @@
         <dt>Modifié</dt>
         <dd>{{ l.updatedAt | date: 'dd/MM/yyyy HH:mm' }}</dd>
       </dl>
+
+      @if (l.kind === 'site') {
+        <section aria-labelledby="children-h">
+          <div class="row">
+            <h3 id="children-h">Liens de ce site <span class="meta">· {{ children().length }}</span></h3>
+            <span class="spacer" style="flex:1"></span>
+            <a class="btn small" [routerLink]="['/']" [queryParams]="{ site: l.id }">+ Ajouter un lien à ce site</a>
+          </div>
+          <ul class="mini">
+            @for (c of children(); track c.id) {
+              <li><a [routerLink]="['/link', c.id]">{{ c.title }}</a>
+                @if (c.category) { <span class="badge cat">{{ c.category }}</span> }</li>
+            } @empty {
+              <li class="empty">Aucun lien rattaché pour l'instant.</li>
+            }
+          </ul>
+        </section>
+      }
 
       <h3>Historique</h3>
       <ol class="history">

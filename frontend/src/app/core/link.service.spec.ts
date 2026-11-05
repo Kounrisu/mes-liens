@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { LinkService } from './link.service';
 
 const fields = (over: Partial<Parameters<LinkService['add']>[0]> = {}) => ({
-  url: 'https://example.com/a', title: 'Titre', tags: ['a', 'b'], note: 'note', category: '', source: '', screenshot: null, ...over,
+  url: 'https://example.com/a', title: 'Titre', tags: ['a', 'b'], note: 'note', category: '', source: '', kind: 'link' as const, parentId: null as string | null, screenshot: null, ...over,
 });
 
 let svc: LinkService;
@@ -33,6 +33,47 @@ describe('LinkService.add', () => {
     expect([l.source, l.category]).toEqual(['', '']);
     expect((await svc.storage.listDirty()).map((d) => d.key).sort()).toContain(`link:${l.id}`);
     expect((await svc.storage.listEvents(l.id)).map((e) => e.type)).toEqual(['created']);
+  });
+});
+
+describe('LinkService — sites et liens rattachés', () => {
+  const ultimate = () => svc.add(fields({ url: 'https://app.ultimatecourses.com/', title: 'Ultimate Courses', kind: 'site', category: 'formation' }));
+
+  it('enregistre un site, puis des liens rattachés qui héritent de sa catégorie et de son nom', async () => {
+    const site = await ultimate();
+    expect([site.kind, site.parentId]).toEqual(['site', null]);
+    const c = await svc.add(fields({ url: 'https://app.ultimatecourses.com/courses/angular', title: 'Angular', parentId: site.id }));
+    expect([c.kind, c.parentId, c.category, c.source]).toEqual(['link', site.id, 'formation', 'Ultimate Courses']);
+  });
+
+  it('la saisie de l’utilisateur l’emporte sur l’héritage du site', async () => {
+    const site = await ultimate();
+    const c = await svc.add(fields({ parentId: site.id, category: 'utile', source: 'Autre nom' }));
+    expect([c.category, c.source]).toEqual(['utile', 'Autre nom']);
+  });
+
+  it('refuse un parent inconnu, supprimé ou qui n’est pas un site, sans rien écrire', async () => {
+    const plain = await svc.add(fields());
+    const site = await ultimate();
+    await svc.remove(site.id);
+    const before = svc.count();
+    for (const parentId of ['inconnu', plain.id, site.id]) await expect(svc.add(fields({ parentId }))).rejects.toThrow(/n'existe plus/);
+    await expect(svc.add(fields({ kind: 'site', parentId: plain.id }))).rejects.toThrow(/autre site/);
+    expect(svc.count()).toBe(before);
+  });
+
+  it('rattacher puis détacher un lien existant (update) ; un site ne devient pas lien ordinaire tant qu’il a des liens', async () => {
+    const site = await ultimate();
+    const c = await svc.add(fields());
+    expect((await svc.update(c.id, { ...fields(), parentId: site.id })).parentId).toBe(site.id);
+    await expect(svc.update(site.id, { ...fields({ url: 'https://app.ultimatecourses.com/' }), kind: 'link' })).rejects.toThrow(/liens rattachés/);
+    expect((await svc.update(c.id, { ...fields(), parentId: null })).parentId).toBeNull();
+    expect((await svc.update(site.id, { ...fields({ url: 'https://app.ultimatecourses.com/' }), kind: 'link' })).kind).toBe('link');
+  });
+
+  it('un lien ne peut pas être son propre parent', async () => {
+    const site = await ultimate();
+    await expect(svc.update(site.id, { ...fields({ url: 'https://app.ultimatecourses.com/' }), kind: 'link', parentId: site.id })).rejects.toThrow(/lui-même/);
   });
 });
 
@@ -96,7 +137,7 @@ describe('LinkService.update', () => {
   it('modifie tous les champs, avance updatedAt, garde id et createdAt', async () => {
     const l = await svc.add(fields());
     await new Promise((r) => setTimeout(r, 5));
-    const u = await svc.update(l.id, { url: 'https://other.org/x', title: 'Nouveau', tags: ['b', 'c'], note: 'autre', category: 'Manga', source: 'MangaDex' });
+    const u = await svc.update(l.id, { url: 'https://other.org/x', title: 'Nouveau', tags: ['b', 'c'], note: 'autre', category: 'Manga', source: 'MangaDex', kind: 'link', parentId: null });
     expect(u).toMatchObject({ id: l.id, createdAt: l.createdAt, url: 'https://other.org/x', title: 'Nouveau', domain: 'other.org', tags: ['b', 'c'], note: 'autre', category: 'manga', source: 'MangaDex' });
     expect(Date.parse(u.updatedAt)).toBeGreaterThan(Date.parse(l.updatedAt));
     expect(svc.find(l.id)?.title).toBe('Nouveau'); // la liste affichée est à jour

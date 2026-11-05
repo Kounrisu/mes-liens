@@ -94,3 +94,10 @@ td.date { white-space: nowrap; color: var(--muted); font-size: .85rem; }
 .rank-body { display: grid; gap: .4rem; flex: 1; min-width: 0; }
 .rank-body h3 a { color: var(--fg); overflow-wrap: anywhere; }
 @media (max-width: 40rem) { .rank-item { flex-wrap: wrap; } .rank-thumb { width: 100%; } }
+
+label.check { display: flex; gap: .6rem; align-items: flex-start; font-weight: 600; }
+label.check input { margin-top: .25rem; }
+label.check span { display: grid; }
+
+.mini { margin: 0; padding-left: 1.1rem; display: grid; gap: .15rem; font-size: .9rem; }
+.mini a { color: var(--fg); overflow-wrap: anywhere; }
