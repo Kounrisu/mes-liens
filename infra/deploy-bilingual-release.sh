@@ -23,7 +23,7 @@ rollback() {
 trap rollback ERR
 # Keep old hashed files for already-open installed PWAs.
 cp -a "$release/browser/." "$root/web/dist/"
-for route in / /sources /library /youtube /table; do
+for route in / /explore /sources /library /youtube /table; do
   docker exec mesliens-web wget -q -O /dev/null "http://127.0.0.1$route"
   test "$(curl -q -s -o /dev/null -w '%{http_code}' "https://links.sn8w.com$route")" = 401
 done

@@ -12,6 +12,17 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 describe('browser collector', () => {
+  it('collects the X History bookmarks tab but refuses the Likes tab', () => {
+    const alert = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    document.body.innerHTML = '<button role="tab" aria-selected="true">Likes</button>';
+    const location = { hostname: 'x.com', pathname: '/i/history', href: 'https://x.com/i/history' };
+    collectSaved(document, location);
+    expect(alert).toHaveBeenCalled();
+    expect(document.getElementById('mesliens-collector')).toBeNull();
+    document.body.innerHTML = '<button role="tab" aria-selected="true">Bookmarks</button><article><a href="https://x.com/example/status/123">Saved post</a><div data-testid="tweetText">Saved text</div></article>';
+    collectSaved(document, location);
+    expect(document.querySelector('[role="status"]')?.textContent).toContain('1 lien');
+  });
   it('captures playlist videos, deduplicates thumbnails, and keeps collecting newly loaded items without network calls', () => {
     document.body.innerHTML =
       '<h1>Angular</h1><ytd-playlist-video-renderer><a href="https://www.youtube.com/watch?v=abcdefghijk">1</a><a id="video-title" href="https://www.youtube.com/watch?v=abcdefghijk" title="Angular course">Angular course</a><ytd-channel-name>Teacher</ytd-channel-name></ytd-playlist-video-renderer>';

@@ -1,5 +1,6 @@
 import { CategoryLabelPipe, TranslatePipe } from '../core/i18n';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { groupYoutube } from '../core/catalog';
 import { LinkService } from '../core/link.service';
@@ -130,11 +131,13 @@ import { youtubePlaylists } from '../core/youtube-playlists';
 })
 export class YoutubePage {
   private readonly svc = inject(LinkService);
-  readonly view = signal(
-    inject(ActivatedRoute).snapshot.queryParamMap.get('view') === 'playlists'
-      ? 'playlists'
-      : 'categories',
-  );
+  private readonly params = toSignal(inject(ActivatedRoute).queryParamMap);
+  readonly view = signal('categories');
+  constructor() {
+    effect(() =>
+      this.view.set(this.params()?.get('view') === 'playlists' ? 'playlists' : 'categories'),
+    );
+  }
   readonly playlists = computed(() =>
     youtubePlaylists(filterLinks(this.svc.activeLinks(), this.query(), [])),
   );

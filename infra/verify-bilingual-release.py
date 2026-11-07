@@ -21,7 +21,7 @@ links = json.loads(subprocess.check_output(['docker', 'exec', 'mesliens-api', 's
 names = {l['source'].strip().lower() for l in links if l['source'].strip()}
 names.update(l['title'].strip().lower() for l in links if l['kind'] == 'site')
 print('API readable:', len(links), 'active links;', len(names), 'source/site names available to the catalogue')
-for route in ('/sources', '/library', '/table', '/youtube', '/api/links'):
+for route in ('/explore', '/sources', '/library', '/table', '/youtube', '/api/links'):
     status = subprocess.check_output(['curl', '-q', '-s', '-o', '/dev/null', '-w', '%{http_code}', 'https://links.sn8w.com' + route], text=True)
     assert status == '401'
 print('All checked pages and the links API require authentication')

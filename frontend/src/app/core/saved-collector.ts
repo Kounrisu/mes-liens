@@ -9,11 +9,13 @@ export function collectSaved(
   const instagram = host === 'instagram.com';
   const facebook = host === 'facebook.com' || host === 'm.facebook.com';
   const x = host === 'x.com' || host === 'twitter.com';
+  const xBookmarks = x && (location.pathname.includes('/bookmarks') ||
+    (location.pathname === '/i/history' && /bookmarks|signets/i.test(document.querySelector('[role="tab"][aria-selected="true"]')?.textContent ?? '')));
   if (!(
     (youtube && /\/playlist(?:$|s$)|\/feed\/playlists$/.test(location.pathname)) ||
     (instagram && location.pathname.includes('/saved/')) ||
     (facebook && location.pathname.startsWith('/saved')) ||
-    (x && location.pathname.includes('/bookmarks'))
+    xBookmarks
   )) {
     alert(
       'mes-liens : ouvre une playlist YouTube ou la page de tes éléments enregistrés avant de collecter.',

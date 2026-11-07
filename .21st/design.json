@@ -48,7 +48,9 @@
     ]
   },
   "decisions": [
-    "Preserve existing visual identity; add library, inbox and learning controls"
+    "Preserve existing visual identity; add library, inbox and learning controls",
+    "Provide an interactive 3D relationship map alongside cards and table views, as requested by the user",
+    "Keep saved Facebook, Instagram, X and YouTube playlists visible in navigation; group topic filters hierarchically"
   ],
   "evidence": [],
   "generatedAt": "2026-11-05T16:48:19.677Z"

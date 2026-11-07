@@ -13,7 +13,7 @@ import { LinkList } from '../shared/link-list';
     <a routerLink="/sources">{{ '← Toutes les sources' | t }}</a>
     <section class="library-heading">
       <div>
-        <h2>{{ entry()?.name || name() }}</h2>
+        <h2>{{ heading() | t }}</h2>
         <p class="meta">
           {{ '{0} lien(s)' | t: [links().length] }} · {{ '{0} formation(s)' | t: [courses()] }}
         </p>
@@ -47,6 +47,16 @@ import { LinkList } from '../shared/link-list';
 })
 export class SourcePage {
   readonly name = input.required<string>();
+  readonly heading = computed(
+    () =>
+      ({
+        facebook: 'Facebook enregistrés',
+        instagram: 'Instagram enregistrés',
+        x: 'X enregistrés',
+      })[this.name().toLowerCase()] ||
+      this.entry()?.name ||
+      this.name(),
+  );
   private readonly svc = inject(LinkService);
   readonly entry = computed(() =>
     sourcesOf(this.svc.activeLinks()).find((s) => s.key === sourceKey(this.name())),

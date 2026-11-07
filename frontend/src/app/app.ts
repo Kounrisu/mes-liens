@@ -1,7 +1,8 @@
 import { CategoryLabelPipe, TranslatePipe } from './core/i18n';
 import { Component, OnInit, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { UNCATEGORIZED, categoryCounts, isYoutube } from './core/catalog';
+import { UNCATEGORIZED, categoryCounts, isYoutube, detectSource } from './core/catalog';
+import { youtubePlaylists } from './core/youtube-playlists';
 import { sourcesOf } from './core/sources';
 import { I18nService } from './core/i18n';
 import { LinkService } from './core/link.service';
@@ -22,6 +23,26 @@ export class App implements OnInit {
     () => this.svc.activeLinks().filter((l) => isYoutube(l.url)).length,
   );
   protected readonly sourceCount = computed(() => sourcesOf(this.svc.links()).length);
+  protected readonly savedSources = computed(() =>
+    [
+      { name: 'Facebook', label: 'Facebook enregistrés' },
+      { name: 'Instagram', label: 'Instagram enregistrés' },
+      { name: 'X', label: 'X enregistrés' },
+    ].map((source) => ({
+      ...source,
+      count: this.svc
+        .activeLinks()
+        .filter(
+          (link) =>
+            link.kind !== 'site' &&
+            (link.source.trim() || detectSource(link.url)?.source || '').toLowerCase() ===
+              source.name.toLowerCase(),
+        ).length,
+    })),
+  );
+  protected readonly playlistCount = computed(
+    () => youtubePlaylists(this.svc.activeLinks()).length,
+  );
 
   protected readonly notConnected = computed(() => this.sync.status() === 'unconfigured');
   /** Appareil neuf : ni connexion au serveur, ni aucun lien local → on guide l'utilisateur au lieu d'afficher une page vide muette. */
