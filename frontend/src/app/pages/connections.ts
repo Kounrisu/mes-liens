@@ -86,6 +86,11 @@ import { categorySuggestions } from '../core/catalog';
     </section>
     <section class="card">
       <h3>{{ '3. Examiner et importer' | t }}</h3>
+      <details>
+        <summary>{{ 'Coller une collecte JSON' | t }}</summary>
+        <label>{{ 'Liens collectés au format JSON' | t }}<textarea rows="5" [value]="pasted()" (input)="pasted.set($any($event.target).value)" [disabled]="busy()" maxlength="10000000"></textarea></label>
+        <button type="button" [disabled]="busy() || !svc.ready() || !pasted().trim()" (click)="loadPasted()">{{ 'Examiner les liens collés' | t }}</button>
+      </details>
       <label
         >{{ 'Fichier de liens collectés (.json)' | t
         }}<input
@@ -173,6 +178,7 @@ export class ConnectionsPage {
   private readonly code = buildSavedCollector();
   readonly collectorHref = inject(DomSanitizer).bypassSecurityTrustUrl(this.code);
   readonly items = signal<SavedItem[]>([]);
+  readonly pasted = signal('');
   readonly category = signal('');
   readonly busy = signal(false);
   readonly error = signal('');
@@ -192,6 +198,21 @@ export class ConnectionsPage {
   changeCategory(e: Event) {
     this.category.set((e.target as HTMLInputElement).value);
     this.result.set(null);
+  }
+  async loadPasted() {
+    this.result.set(null);
+    this.items.set([]);
+    this.error.set('');
+    this.message.set('');
+    this.busy.set(true);
+    try {
+      this.items.set(readSavedItems(this.pasted()));
+      this.result.set(await planSavedImport(this.svc.storage, this.items(), this.category()));
+    } catch (e) {
+      this.error.set(e instanceof Error ? e.message : 'Import impossible.');
+    } finally {
+      this.busy.set(false);
+    }
   }
   async load(e: Event) {
     const input = e.target as HTMLInputElement,
@@ -233,6 +254,7 @@ export class ConnectionsPage {
       await this.svc.applyZip(result.plan, { deleteMissing: false });
       this.result.set(null);
       this.items.set([]);
+      this.pasted.set('');
       this.message.set('Import terminé. Les liens sont disponibles dans la bibliothèque.');
     } catch (e) {
       this.error.set(e instanceof Error ? e.message : 'Import impossible.');

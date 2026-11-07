@@ -549,5 +549,8 @@
   "Adresses de playlists YouTube invalides.": "Invalid YouTube playlist URLs.",
   "Le classement a changé. Actualise les suggestions.": "The categories have changed. Refresh the suggestions.",
   "Import depuis mes comptes — mes-liens": "Import from my accounts — mes-liens",
-  "Source — mes-liens": "Source — mes-liens"
+  "Source — mes-liens": "Source — mes-liens",
+  "Coller une collecte JSON": "Paste a JSON capture",
+  "Liens collectés au format JSON": "Collected links as JSON",
+  "Examiner les liens collés": "Review pasted links"
 }
