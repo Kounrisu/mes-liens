@@ -9,8 +9,7 @@ import {
   duplicateKey,
   LEARNING_STATES,
 } from '../core/library';
-import { LinksTable } from '../shared/links-table';
-import { LinkList } from '../shared/link-list';
+import { LinkViews } from '../shared/link-views';
 import { tagCounts } from '../core/link-utils';
 import { InsightsService } from '../core/insights.service';
 import { categorySuggestions } from '../core/catalog';
@@ -18,7 +17,7 @@ import { CourseOrganizer } from '../shared/course-organizer';
 
 @Component({
   selector: 'app-library',
-  imports: [CategoryLabelPipe, TranslatePipe, LinksTable, LinkList, RouterLink, CourseOrganizer],
+  imports: [CategoryLabelPipe, TranslatePipe, LinkViews, RouterLink, CourseOrganizer],
   template: ` <main class="page">
     <section class="library-heading">
       <div>
@@ -74,13 +73,6 @@ import { CourseOrganizer } from '../shared/course-organizer';
           </select></label
         >
       </div>
-      <div class="row view-choice">
-        <button type="button" [attr.aria-pressed]="!cards()" (click)="cards.set(false)">
-          {{ 'Tableau et classement en lot' | t }}</button
-        ><button type="button" [attr.aria-pressed]="cards()" (click)="cards.set(true)">
-          {{ 'Aperçus visuels' | t }}
-        </button>
-      </div>
       @if (view() === 'inbox') {
         <p class="meta">
           {{
@@ -97,11 +89,7 @@ import { CourseOrganizer } from '../shared/course-organizer';
           }}
         </p>
       }
-      @if (cards()) {
-        <app-link-list [links]="filtered()" />
-      } @else {
-        <app-links-table [links]="filtered()" />
-      }
+      <app-link-views [links]="filtered()" />
     </section>
     @if (view() === 'knowledge') {
       <section [attr.aria-label]="'Mes notes de connaissances' | t">
@@ -187,7 +175,6 @@ export class LibraryPage {
   readonly category = signal('');
   readonly collection = signal('');
   readonly status = signal('');
-  readonly cards = signal(false);
   readonly categories = computed(() => categorySuggestions(this.svc.links()));
   readonly collections = computed(() =>
     [...new Set(this.svc.links().flatMap((l) => libraryOf(l).collections))].sort(),

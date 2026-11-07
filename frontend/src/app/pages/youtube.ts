@@ -5,13 +5,13 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { groupYoutube } from '../core/catalog';
 import { LinkService } from '../core/link.service';
 import { filterLinks } from '../core/link-utils';
-import { LinkList } from '../shared/link-list';
+import { LinkViews, VIEW_MODES, ViewMode } from '../shared/link-views';
 import { youtubePlaylists } from '../core/youtube-playlists';
 
 /** Tous les liens YouTube, rangés par catégorie : formation, music, korean bands, korean learning, japanese learning, japanese bands. */
 @Component({
   selector: 'app-youtube',
-  imports: [CategoryLabelPipe, TranslatePipe, LinkList, RouterLink],
+  imports: [CategoryLabelPipe, TranslatePipe, LinkViews, RouterLink],
   template: `
     <main class="page">
       <section aria-labelledby="yt-h">
@@ -35,6 +35,18 @@ import { youtubePlaylists } from '../core/youtube-playlists';
             {{ 'Mes playlists' | t }} · {{ playlists().length }}
           </button>
           <a class="btn" routerLink="/connections">{{ 'Importer mes favoris' | t }}</a>
+        </div>
+        <div class="view-switch" role="group" [attr.aria-label]="'Mode d\\'affichage' | t">
+          @for (m of modes; track m.mode) {
+            <button
+              type="button"
+              [class.on]="presentation() === m.mode"
+              [attr.aria-pressed]="presentation() === m.mode"
+              (click)="presentation.set(m.mode)"
+            >
+              {{ m.label | t }}
+            </button>
+          }
         </div>
         <div class="filters">
           <input
@@ -77,7 +89,12 @@ import { youtubePlaylists } from '../core/youtube-playlists';
               <a [href]="p.url" target="_blank" rel="noopener noreferrer">{{ p.title }}</a>
               <small>{{ p.links.length }}</small>
             </h3>
-            <app-link-list [links]="p.links" [filters]="false" />
+            <app-link-views
+              [links]="p.links"
+              [filters]="false"
+              [showSwitch]="false"
+              [viewMode]="presentation()"
+            />
           </section>
         } @empty {
           <p class="empty">
@@ -98,7 +115,12 @@ import { youtubePlaylists } from '../core/youtube-playlists';
               <small class="meta">· {{ s.links.length }}</small>
             </h3>
             @if (s.links.length) {
-              <app-link-list [links]="s.links" [filters]="false" />
+              <app-link-views
+                [links]="s.links"
+                [filters]="false"
+                [showSwitch]="false"
+                [viewMode]="presentation()"
+              />
             } @else {
               <p class="empty">
                 {{
@@ -122,7 +144,12 @@ import { youtubePlaylists } from '../core/youtube-playlists';
                   | t
               }}
             </p>
-            <app-link-list [links]="grouped().others" [filters]="false" />
+            <app-link-views
+              [links]="grouped().others"
+              [filters]="false"
+              [showSwitch]="false"
+              [viewMode]="presentation()"
+            />
           </section>
         }
       }
@@ -133,6 +160,8 @@ export class YoutubePage {
   private readonly svc = inject(LinkService);
   private readonly params = toSignal(inject(ActivatedRoute).queryParamMap);
   readonly view = signal('categories');
+  readonly modes = VIEW_MODES;
+  readonly presentation = signal<ViewMode>('cards');
   constructor() {
     effect(() =>
       this.view.set(this.params()?.get('view') === 'playlists' ? 'playlists' : 'categories'),

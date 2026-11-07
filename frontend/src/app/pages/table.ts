@@ -2,13 +2,13 @@ import { CategoryLabelPipe, TranslatePipe } from '../core/i18n';
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { UNCATEGORIZED, categoryCounts } from '../core/catalog';
 import { LinkService } from '../core/link.service';
-import { LinksTable } from '../shared/links-table';
+import { LinkViews } from '../shared/link-views';
 import { categoryWithin } from '../core/library';
 
 /** Tableau global : filtre par catégorie ; tri, recherche et actions sont dans le composant partagé. */
 @Component({
   selector: 'app-table',
-  imports: [CategoryLabelPipe, TranslatePipe, LinksTable],
+  imports: [CategoryLabelPipe, TranslatePipe, LinkViews],
   templateUrl: './table.html',
 })
 export class TablePage {

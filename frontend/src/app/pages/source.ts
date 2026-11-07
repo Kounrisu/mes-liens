@@ -5,10 +5,10 @@ import { LinkService } from '../core/link.service';
 import { sourcesOf, sourceKey } from '../core/sources';
 import { detectSource } from '../core/catalog';
 import { categoryPaths, categoryWithin, libraryOf } from '../core/library';
-import { LinkList } from '../shared/link-list';
+import { LinkViews } from '../shared/link-views';
 
 @Component({
-  imports: [TranslatePipe, CategoryLabelPipe, RouterLink, LinkList],
+  imports: [TranslatePipe, CategoryLabelPipe, RouterLink, LinkViews],
   template: `<main class="page">
     <a routerLink="/sources">{{ '← Toutes les sources' | t }}</a>
     <section class="library-heading">
@@ -41,7 +41,7 @@ import { LinkList } from '../shared/link-list';
           </select></label
         >
       </div>
-      <app-link-list [links]="filtered()" />
+      <app-link-views [links]="filtered()" />
     </section>
   </main>`,
 })

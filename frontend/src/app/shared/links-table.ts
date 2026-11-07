@@ -40,6 +40,7 @@ export class LinksTable {
   readonly links = input.required<Link[]>();
   /** false : pas de champ de recherche (la page parente filtre elle-même). */
   readonly searchable = input(true);
+  readonly filters = input(true);
 
   protected readonly columns: Column[] = [
     { key: 'title', label: 'Titre' },

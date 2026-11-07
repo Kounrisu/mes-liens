@@ -20,4 +20,4 @@
 .sync.bad { color: var(--danger); border-color: var(--danger); }
 .sync-panel summary { cursor: pointer; font-weight: 600; }
 .sync-panel form { margin-top: .75rem; }
-.category-menu{position:relative}.category-menu summary{cursor:pointer;padding:.45rem .7rem;list-style-position:inside}.category-menu-list{position:absolute;right:0;top:100%;z-index:20;width:min(80vw,580px);max-height:360px;overflow:auto;display:flex;flex-wrap:wrap;gap:6px;padding:14px;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 25px #0002}.saved-nav{border-top:0}.saved-nav strong{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:.4rem .7rem}.saved-nav a{font-size:.8rem}
+.saved-nav{border-top:0}.saved-nav strong{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:.4rem .7rem}.saved-nav a{font-size:.8rem}

@@ -41,21 +41,17 @@
   <a routerLink="/youtube" routerLinkActive="active"
     >YouTube <small>{{ youtubeCount() }}</small></a
   >
-  <details class="category-menu">
-    <summary>{{ 'Catégories' | t }}</summary>
-    <div class="category-menu-list">
-      @for (c of categories(); track c.category) {
-        <a [routerLink]="['/category', c.category]" routerLinkActive="active"
-          >{{ c.category | categoryLabel }} <small>{{ c.count }}</small></a
-        >
-      }
-      @if (uncategorizedCount()) {
-        <a [routerLink]="['/category', '_']" routerLinkActive="active">
-          {{ uncategorizedLabel | t }} <small>{{ uncategorizedCount() }}</small></a
-        >
-      }
-    </div>
-  </details>
+  <span class="sep" aria-hidden="true">|</span>
+  @for (c of categories(); track c.category) {
+    <a [routerLink]="['/category', c.category]" routerLinkActive="active"
+      >{{ c.category | categoryLabel }} <small>{{ c.count }}</small></a
+    >
+  }
+  @if (uncategorizedCount()) {
+    <a [routerLink]="['/category', '_']" routerLinkActive="active">
+      {{ uncategorizedLabel | t }} <small>{{ uncategorizedCount() }}</small></a
+    >
+  }
 </nav>
 
 <nav class="nav saved-nav" [attr.aria-label]="'Mes enregistrements' | t">

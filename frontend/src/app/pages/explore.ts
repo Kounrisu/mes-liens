@@ -9,6 +9,7 @@ import { KnowledgeNode, nodeMatches, sourceOf } from '../core/knowledge-graph';
 import { youtubePlaylists } from '../core/youtube-playlists';
 import { KnowledgeMap } from '../shared/knowledge-map';
 import { LinkList } from '../shared/link-list';
+import { LinkRows } from '../shared/link-rows';
 import { LinksTable } from '../shared/links-table';
 import { FavoriteButton } from '../shared/favorite-button';
 import { Link } from '../core/models';
@@ -20,6 +21,7 @@ import { Link } from '../core/models';
     TranslatePipe,
     KnowledgeMap,
     LinkList,
+    LinkRows,
     LinksTable,
     FavoriteButton,
   ],
@@ -173,6 +175,13 @@ import { Link } from '../core/models';
             </button>
             <button
               type="button"
+              [attr.aria-pressed]="view() === 'list'"
+              (click)="view.set('list')"
+            >
+              {{ 'Liste' | t }}
+            </button>
+            <button
+              type="button"
               [attr.aria-pressed]="view() === 'table'"
               (click)="view.set('table')"
             >
@@ -277,6 +286,8 @@ import { Link } from '../core/models';
           </details>
         } @else if (view() === 'cards') {
           <app-link-list [links]="filtered()" [filters]="false" />
+        } @else if (view() === 'list') {
+          <app-link-rows [links]="filtered()" [filters]="false" />
         } @else {
           <app-links-table [links]="filtered()" [searchable]="false" />
         }

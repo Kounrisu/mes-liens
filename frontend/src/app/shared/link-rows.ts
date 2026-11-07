@@ -25,15 +25,17 @@ const NO_SOURCE = 'sans source';
     FocusButton,
   ],
   template: `
-    <div class="filters">
-      <input
-        type="search"
-        [placeholder]="'Rechercher…' | t"
-        [attr.aria-label]="'Rechercher' | t"
-        [value]="query()"
-        (input)="setQuery(val($event))"
-      />
-    </div>
+    @if (filters()) {
+      <div class="filters">
+        <input
+          type="search"
+          [placeholder]="'Rechercher…' | t"
+          [attr.aria-label]="'Rechercher' | t"
+          [value]="query()"
+          (input)="setQuery(val($event))"
+        />
+      </div>
+    }
     <p class="meta" aria-live="polite">
       {{ '{0} lien{1}' | t: [visible().length, visible().length > 1 ? 's' : ''] }}
     </p>
@@ -118,6 +120,7 @@ export class LinkRows {
   readonly links = input.required<Link[]>();
   /** true : regroupé par source ; false : simple liste. */
   readonly grouped = input(false);
+  readonly filters = input(true);
 
   protected readonly query = signal('');
   protected readonly limit = signal(PAGE_SIZE);

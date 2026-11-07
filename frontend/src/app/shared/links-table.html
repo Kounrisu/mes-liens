@@ -1,39 +1,41 @@
-<div class="filters">
-  @if (searchable()) {
-    <input
-      type="search"
-      [placeholder]="'Rechercher…' | t"
-      [attr.aria-label]="'Rechercher' | t"
-      [value]="query()"
-      (input)="setQuery(val($event))"
-    />
-  }
-  <select
-    [attr.aria-label]="'Filtrer par source' | t"
-    [value]="source()"
-    (change)="setSource(val($event))"
-  >
-    <option value="">{{ 'Toutes les sources' | t }}</option>
-    @for (s of sources(); track s) {
-      <option [value]="s" [selected]="source() === s">{{ s }}</option>
+@if (filters()) {
+  <div class="filters">
+    @if (searchable()) {
+      <input
+        type="search"
+        [placeholder]="'Rechercher…' | t"
+        [attr.aria-label]="'Rechercher' | t"
+        [value]="query()"
+        (input)="setQuery(val($event))"
+      />
     }
-  </select>
-  <select
-    [attr.aria-label]="'Filtrer par étiquette' | t"
-    [value]="tag()"
-    (change)="setTag(val($event))"
-  >
-    <option value="">{{ 'Toutes les étiquettes' | t }}</option>
-    @for (t of tags(); track t.tag) {
-      <option [value]="t.tag" [selected]="tag() === t.tag">{{ t.tag }} ({{ t.count }})</option>
+    <select
+      [attr.aria-label]="'Filtrer par source' | t"
+      [value]="source()"
+      (change)="setSource(val($event))"
+    >
+      <option value="">{{ 'Toutes les sources' | t }}</option>
+      @for (s of sources(); track s) {
+        <option [value]="s" [selected]="source() === s">{{ s }}</option>
+      }
+    </select>
+    <select
+      [attr.aria-label]="'Filtrer par étiquette' | t"
+      [value]="tag()"
+      (change)="setTag(val($event))"
+    >
+      <option value="">{{ 'Toutes les étiquettes' | t }}</option>
+      @for (t of tags(); track t.tag) {
+        <option [value]="t.tag" [selected]="tag() === t.tag">{{ t.tag }} ({{ t.count }})</option>
+      }
+    </select>
+    @if (query() || source() || tag()) {
+      <button type="button" class="ghost" (click)="resetFilters()">
+        {{ 'Effacer les filtres' | t }}
+      </button>
     }
-  </select>
-  @if (query() || source() || tag()) {
-    <button type="button" class="ghost" (click)="resetFilters()">
-      {{ 'Effacer les filtres' | t }}
-    </button>
-  }
-</div>
+  </div>
+}
 <app-selection-toolbar [links]="rows()" [shown]="shownRows()" [(selected)]="selected" />
 <div class="table-wrap" tabindex="0" role="region" [attr.aria-label]="'Tableau des liens' | t">
   <table>

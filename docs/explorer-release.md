@@ -45,3 +45,19 @@ server; bookmark contents and private addresses are not included in this reposit
 The release is frontend-only. It does not change the database schema or API.
 The initial bundle has the existing 500 kB advisory budget warning; the hard build
 budget passes and the map page is loaded separately.
+
+## Visible categories and consistent views — 2026-11-08
+
+The user requested the original expanded category navigation. Category links and
+counts now wrap visibly in the navigation without a dropdown. Home, categories,
+the library, source collections and the all-links page reuse the existing view
+switch with cards, compact list, table, grouping by source and a lazy-loaded 3D map.
+Search, source and tag filters remain applied while switching presentation.
+YouTube uses one presentation switch for all playlist/category sections. Explorer
+also offers a compact list beside its existing cards, table and map.
+
+Verified in the browser with local sample records: visible categories, filtering
+across list/table/map, graph selection, and a 390px viewport without horizontal
+page overflow. The frontend suite passes 162 tests, with 2 pre-existing skips;
+production build and translation checks pass. The advisory initial-bundle warning
+is 524 kB against the 500 kB target; the 1 MB hard limit passes.
