@@ -242,3 +242,4 @@
 - Imports examinés avant application, doublons reconnus, champs personnels conservés, playlists regroupées ; propositions de classement Formation et catalogues par source.
 - 155 tests frontend et 6 tests backend réussis, build de production et traductions validés. Collecteur minifié exécuté et export vérifié en environnement isolé. Revue UI sans anomalie détectée.
 - Livraison autorisée explicitement : commit, tag, push et déploiement. Scripts avec sauvegarde, vérification et restauration automatique. Voir docs/manual-import-release.md pour limites et périmètre.
+- Déploiement vérifié à 23 h 15 (Paris) : sauvegarde 2026-11-07-2215, 2 615 liens, artefacts identiques, protection active, écran d’import fonctionnel dans le navigateur connecté. Tag v0.4.0-manual-import poussé sur origin.
