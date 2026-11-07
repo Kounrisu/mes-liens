@@ -95,6 +95,12 @@
         @if (l.note) {
           <p class="note">{{ l.note }}</p>
         }
+        @if (lib(l).creator) {
+          <p class="meta">{{ lib(l).creator }}</p>
+        }
+        @if (lib(l).description) {
+          <p class="note resource-description">{{ lib(l).description }}</p>
+        }
         @if (l.tags.length) {
           <ul class="tags">
             @for (t of l.tags; track t) {

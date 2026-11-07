@@ -56,7 +56,7 @@ export function filterLinks(links: Link[], query: string, tags: readonly string[
     if (!words.length) return true;
     const b = libraryOf(l);
     const hay = fold(
-      `${l.title} ${l.url} ${l.note} ${l.tags.join(' ')} ${l.category} ${l.source} ${b.collections.join(' ')} ${b.objective} ${b.resumeAt} ${b.nextAction} ${b.learned} ${b.applyTo}`,
+      `${l.title} ${l.url} ${l.note} ${l.tags.join(' ')} ${l.category} ${l.source} ${b.collections.join(' ')} ${b.objective} ${b.resumeAt} ${b.nextAction} ${b.learned} ${b.applyTo} ${b.description} ${b.creator}`,
     );
     return words.every((w) => hay.includes(w));
   });

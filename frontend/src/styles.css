@@ -164,3 +164,9 @@ app-selection-toolbar.has-selection { position: sticky; top: 5rem; z-index: 5; b
   app-selection-toolbar.has-selection { position: static; }
   .grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* Manual account imports and course classification. */
+app-course-organizer, app-resource-editor { display: grid; gap: .75rem; margin-bottom: 1rem; }
+.classification-preview { max-height: 25rem; overflow: auto; }
+.classification-preview small { display: block; color: var(--muted); }
+.resource-description { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }

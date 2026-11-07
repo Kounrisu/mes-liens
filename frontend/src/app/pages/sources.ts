@@ -65,6 +65,11 @@ import { SourceEntry, sourcesOf } from '../core/sources';
         <p role="status">{{ message() | t }}</p>
       }
       <section class="card">
+        <div class="row">
+          <a class="btn" [routerLink]="['/sources', 'YouTube']">YouTube</a>
+          <a class="btn" [routerLink]="['/sources', 'Master.dev']">Master.dev</a>
+          <a class="btn" routerLink="/connections">{{ 'Importer mes favoris' | t }}</a>
+        </div>
         <div class="filters">
           <input
             type="search"
@@ -78,7 +83,8 @@ import { SourceEntry, sourcesOf } from '../core/sources';
         <ul class="rows">
           @for (s of entries(); track s.key) {
             <li class="rowitem">
-              <strong>{{ s.name }}</strong
+              <strong
+                ><a [routerLink]="['/sources', s.name]">{{ s.name }}</a></strong
               ><span class="meta"> {{ '{0} lien(s)' | t: [s.links.length] }} </span>
               @if (s.sites.length) {
                 <span class="meta">{{ s.sites[0].domain }}</span>

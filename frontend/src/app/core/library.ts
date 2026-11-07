@@ -25,6 +25,10 @@ export interface LibraryData {
   learned: string;
   applyTo: string;
   reviewOn: string;
+  description: string;
+  creator: string;
+  publishedAt: string;
+  playlists: string[];
 }
 export function libraryOf(link: Pick<Link, 'library'>): LibraryData {
   return {
@@ -40,6 +44,10 @@ export function libraryOf(link: Pick<Link, 'library'>): LibraryData {
     applyTo: '',
     reviewOn: '',
     ...link.library,
+    description: link.library?.description ?? '',
+    creator: link.library?.creator ?? '',
+    publishedAt: link.library?.publishedAt ?? '',
+    playlists: link.library?.playlists ?? [],
   };
 }
 export function validateLibrary(raw: unknown): LibraryData {
@@ -60,6 +68,9 @@ export function validateLibrary(raw: unknown): LibraryData {
     'learned',
     'applyTo',
     'reviewOn',
+    'description',
+    'creator',
+    'publishedAt',
   ] as const) {
     if (v[key] !== undefined && (typeof v[key] !== 'string' || (v[key] as string).length > 10000))
       throw new Error(`${key} invalide (10000 caractères maximum).`);
@@ -76,6 +87,27 @@ export function validateLibrary(raw: unknown): LibraryData {
     if (!Object.hasOwn(RESOURCE_TYPES, String(v['resourceType'])))
       throw new Error('Type de ressource invalide.');
     d.resourceType = v['resourceType'] as LibraryData['resourceType'];
+  }
+  if (d.creator.length > 300) throw new Error('Créateur trop long (300 caractères maximum).');
+  if (
+    d.publishedAt &&
+    (!/^\d{4}-\d{2}-\d{2}$/.test(d.publishedAt) ||
+      !Number.isFinite(Date.parse(d.publishedAt)) ||
+      new Date(d.publishedAt).toISOString().slice(0, 10) !== d.publishedAt)
+  )
+    throw new Error('Date de publication invalide.');
+  if (v['playlists'] !== undefined) {
+    if (
+      !Array.isArray(v['playlists']) ||
+      v['playlists'].length > 100 ||
+      v['playlists'].some(
+        (p) =>
+          typeof p !== 'string' ||
+          !/^https:\/\/www\.youtube\.com\/playlist\?list=[A-Za-z0-9_-]{2,150}$/.test(p),
+      )
+    )
+      throw new Error('Adresses de playlists YouTube invalides.');
+    d.playlists = [...new Set(v['playlists'] as string[])];
   }
   if (v['learningStatus'] !== undefined) {
     if (!Object.hasOwn(LEARNING_STATES, String(v['learningStatus'])))

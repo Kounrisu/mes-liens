@@ -13,6 +13,7 @@ export const LEARNING_SUBCATEGORIES = [
   'css',
   'security',
   'devops',
+  'fullstack',
 ].map((topic) => `formation / ${topic}`);
 
 /** Catégories proposées d'office ; l'utilisateur peut en saisir d'autres librement (elles apparaissent alors dans le menu). */
@@ -59,9 +60,14 @@ interface KnownSource {
 
 /**
  * Sites reconnus automatiquement. Liste volontairement courte et vérifiable ; tout le reste se saisit à la main dans le champ « source ».
- * (« master.dev » demandé : je n'ai pas pu confirmer à quel site ce domaine correspond, il n'est donc pas listé.)
  */
 export const KNOWN_SOURCES: readonly KnownSource[] = [
+  { domain: 'master.dev', name: 'Master.dev', category: 'formation' },
+  { domain: 'x.com', name: 'X', category: '' },
+  { domain: 'twitter.com', name: 'X', category: '' },
+  { domain: 'facebook.com', name: 'Facebook', category: '' },
+  { domain: 'fb.watch', name: 'Facebook', category: '' },
+  { domain: 'instagram.com', name: 'Instagram', category: '' },
   { domain: 'udemy.com', name: 'Udemy', category: 'formation' },
   { domain: 'academind.com', name: 'Academind', category: 'formation' },
   { domain: 'frontendmasters.com', name: 'Frontend Masters', category: 'formation' },

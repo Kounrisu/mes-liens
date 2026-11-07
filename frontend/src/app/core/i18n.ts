@@ -101,6 +101,7 @@ export class CategoryLabelPipe implements PipeTransform {
       css: ['CSS', 'CSS'],
       security: ['sécurité', 'security'],
       devops: ['DevOps', 'DevOps'],
+      fullstack: ['Fullstack', 'Fullstack'],
       utile: ['utile', 'useful'],
       emploi: ['emploi', 'jobs'],
       veille: ['veille', 'research'],

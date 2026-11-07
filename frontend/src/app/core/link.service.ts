@@ -16,6 +16,7 @@ import { sourceKey, sourcesOf } from './sources';
 import { Link, LinkEvent, LinkKind } from './models';
 import { checkHierarchy } from './sites';
 import { LibraryData, libraryOf, validateLibrary, categoryWithin } from './library';
+import { CourseChange } from './course-classification';
 
 /** Tout ce qui se saisit sur un lien. `url` est déjà normalisé (http/https). */
 export interface LinkFields {
@@ -163,6 +164,23 @@ export class LinkService {
   }
 
   // ---- page Focus ----
+
+  async applyCourseClassification(plan: readonly CourseChange[]): Promise<number> {
+    const changes = new Map(plan.map((p) => [p.before.id, p]));
+    const count = await this.need().mutateLinks([...changes.keys()], (l) => {
+      const p = changes.get(l.id)!;
+      if (p.before.updatedAt !== l.updatedAt)
+        throw new Error('Le classement a changé. Actualise les suggestions.');
+      return {
+        ...l,
+        category: p.category,
+        source: p.source,
+        library: { ...libraryOf(l), resourceType: 'course' },
+      };
+    });
+    if (count) await this.afterLocalChange();
+    return count;
+  }
 
   async classifyMany(
     ids: readonly string[],

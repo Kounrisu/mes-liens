@@ -90,7 +90,7 @@ public class LinkEntity {
         this.category = d.category();
         this.source = d.source();
         // Older installed PWAs omit this field: preserve new learning data.
-        if (d.library() != null) this.library = d.library();
+        if (d.library() != null) this.library = d.library().withMetadataFrom(this.library);
         if (d.favorite() != null) this.favorite = d.favorite();
         this.focusRank = d.focusRank();
         this.kind = d.kind();
@@ -106,7 +106,7 @@ public class LinkEntity {
     }
 
     public LinkDto toDto() {
-        return new LinkDto(id, url, title, domain, java.util.List.of(tags), note, screenshotId, category, source, focusRank, kind, parentId, createdAt, updatedAt, deletedAt, library, favorite);
+        return new LinkDto(id, url, title, domain, java.util.List.of(tags), note, screenshotId, category, source, focusRank, kind, parentId, createdAt, updatedAt, deletedAt, library == null ? null : library.withMetadataFrom(null), favorite);
     }
 
     public Long getServerSeq() { return serverSeq; }

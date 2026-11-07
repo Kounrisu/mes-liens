@@ -58,6 +58,26 @@
         </dd>
         <dt>{{ 'Note' | t }}</dt>
         <dd class="note">{{ l.note || '—' }}</dd>
+        @if (lib(l).description) {
+          <dt>{{ 'Description' | t }}</dt>
+          <dd class="note">{{ lib(l).description }}</dd>
+        }
+        @if (lib(l).creator) {
+          <dt>{{ 'Créateur / auteur' | t }}</dt>
+          <dd>{{ lib(l).creator }}</dd>
+        }
+        @if (lib(l).publishedAt) {
+          <dt>{{ 'Date de publication' | t }}</dt>
+          <dd>{{ lib(l).publishedAt | localDate }}</dd>
+        }
+        @if (lib(l).playlists.length) {
+          <dt>{{ 'Playlists YouTube' | t }}</dt>
+          <dd>
+            <a routerLink="/youtube" [queryParams]="{ view: 'playlists' }">{{
+              'Voir les playlists' | t
+            }}</a>
+          </dd>
+        }
         <dt>{{ 'Créé' | t }}</dt>
         <dd>{{ l.createdAt | localDate: 'dd/MM/yyyy HH:mm' }}</dd>
         <dt>{{ 'Modifié' | t }}</dt>

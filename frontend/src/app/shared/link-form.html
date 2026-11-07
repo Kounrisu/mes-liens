@@ -24,6 +24,22 @@
     <input type="text" [value]="title()" (input)="title.set(val($event))" />
   </label>
 
+  <app-resource-editor
+    [value]="library()"
+    [youtube]="isYoutube(url())"
+    (changed)="library.set($event)"
+  />
+  @if (availableDescription() && !library().description) {
+    <button type="button" (click)="useDescription()">
+      {{ 'Utiliser la description de la page' | t }}
+    </button>
+  }
+  @if (suggestion()) {
+    <p class="notice">
+      {{ 'Classement proposé :' | t }} {{ suggestion() }}
+      <button type="button" (click)="suggestCourse()">{{ 'Appliquer le classement' | t }}</button>
+    </p>
+  }
   <label class="check">
     <input
       type="checkbox"

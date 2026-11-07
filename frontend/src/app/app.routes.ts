@@ -12,7 +12,13 @@ import { YoutubePage } from './pages/youtube';
 import { LibraryPage } from './pages/library';
 
 export const routes: Routes = [
+  {
+    path: 'connections',
+    loadComponent: () => import('./pages/connections').then((m) => m.ConnectionsPage),
+    title: 'Import depuis mes comptes — mes-liens',
+  },
   { path: 'sources', component: SourcesPage, title: 'Sources — mes-liens' },
+  { path: 'sources/:name', loadComponent: () => import('./pages/source').then((m) => m.SourcePage), title: 'Source — mes-liens' },
   { path: 'library', component: LibraryPage, title: 'Bibliothèque — mes-liens' },
   { path: '', component: HomePage, title: 'mes-liens' },
   { path: 'admin', component: AdminPage, title: 'Administration — mes-liens' },

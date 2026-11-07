@@ -235,3 +235,10 @@
 - Comparaison avec la production (lecture seule, SSH) : 1 690 liens déjà présents ; **1 022 ajoutés** (étiquette `import-safari`, + `liste-de-lecture` le cas échéant). Sauvegarde `pg_dump` avant (`~/backups-safari/avant-import-safari.sql` sur le VPS), insertion SQL en une transaction (les déclencheurs de synchro attribuent les séquences). Résultat : 2 723 liens actifs (1 701 avant). Classement approximatif : ~680 en `autre`, 47 non classés.
 - Front redéployé (Phase 5 PWA + filtres du tableau) : 120 tests passent, build avec Node 24 (l'Angular CLI exige ≥ 22.22.3 ; le Node par défaut du PC est 10). Incident : mon script de nettoyage a supprimé un instant les nouveaux `main-*.js` / `styles-*.css` (comparaison de noms erronée) ; fichiers recopiés dans la minute, site à nouveau complet.
 - Non vérifié : affichage réel après connexion (le site est derrière le mot de passe) ; installation PWA sur iPhone/iPad.
+
+
+## 2026-11-07 — Imports manuels et formation (v0.4.0)
+- Choix utilisateur : collecte manuelle depuis le portable et ses sessions connectées, sans synchronisation OAuth en arrière-plan.
+- Imports examinés avant application, doublons reconnus, champs personnels conservés, playlists regroupées ; propositions de classement Formation et catalogues par source.
+- 155 tests frontend et 6 tests backend réussis, build de production et traductions validés. Collecteur minifié exécuté et export vérifié en environnement isolé. Revue UI sans anomalie détectée.
+- Livraison autorisée explicitement : commit, tag, push et déploiement. Scripts avec sauvegarde, vérification et restauration automatique. Voir docs/manual-import-release.md pour limites et périmètre.

@@ -14,10 +14,11 @@ import { LinkList } from '../shared/link-list';
 import { tagCounts } from '../core/link-utils';
 import { InsightsService } from '../core/insights.service';
 import { categorySuggestions } from '../core/catalog';
+import { CourseOrganizer } from '../shared/course-organizer';
 
 @Component({
   selector: 'app-library',
-  imports: [CategoryLabelPipe, TranslatePipe, LinksTable, LinkList, RouterLink],
+  imports: [CategoryLabelPipe, TranslatePipe, LinksTable, LinkList, RouterLink, CourseOrganizer],
   template: ` <main class="page">
     <section class="library-heading">
       <div>
@@ -30,6 +31,7 @@ import { categorySuggestions } from '../core/catalog';
       </div>
       <a class="btn" routerLink="/"> {{ 'Enregistrer un lien' | t }} </a>
     </section>
+    <app-course-organizer />
     <nav class="library-tabs" [attr.aria-label]="'Vues de la bibliothèque' | t">
       @for (v of views; track v.id) {
         <button

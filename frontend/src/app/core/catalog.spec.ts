@@ -57,9 +57,10 @@ describe('detectSource', () => {
 describe('catégories', () => {
   it('proposes every requested learning topic before any link exists and preserves custom paths', () => {
     const suggestions = categorySuggestions([mk('custom', { category: 'projet / recherche' })]);
-    expect(LEARNING_SUBCATEGORIES).toHaveLength(10);
+    expect(LEARNING_SUBCATEGORIES).toHaveLength(11);
     for (const topic of [
       'typescript',
+      'fullstack',
       'angular',
       'java',
       'javascript',

@@ -9,6 +9,7 @@ import { SyncService } from '../core/sync.service';
 import { filterLinks, tagCounts } from '../core/link-utils';
 import { Link } from '../core/models';
 import { FocusButton } from './focus-button';
+import { libraryOf } from '../core/library';
 
 const PAGE_SIZE = 48;
 
@@ -28,6 +29,7 @@ const PAGE_SIZE = 48;
   templateUrl: './link-list.html',
 })
 export class LinkList {
+  protected readonly lib = libraryOf;
   protected readonly i18n = inject(I18nService);
   protected readonly svc = inject(LinkService);
   protected readonly sync = inject(SyncService);

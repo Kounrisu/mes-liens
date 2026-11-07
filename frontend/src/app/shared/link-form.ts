@@ -20,16 +20,51 @@ import { Link } from '../core/models';
 import { libraryOf, duplicatesOf } from '../core/library';
 import { LibraryEditor } from './library-editor';
 import { RouterLink } from '@angular/router';
+import { ResourceEditor } from './resource-editor';
+import { isYoutube } from '../core/catalog';
+import { courseSuggestion } from '../core/course-classification';
+import { InsightsService } from '../core/insights.service';
 
 /** Formulaire unique pour créer (sans `link`) et modifier (avec `link`) : mêmes champs, même validation. */
 @Component({
   selector: 'app-link-form',
-  imports: [TranslatePipe, LibraryEditor, RouterLink],
+  imports: [TranslatePipe, LibraryEditor, ResourceEditor, RouterLink],
   templateUrl: './link-form.html',
 })
 export class LinkForm implements OnInit {
   protected readonly i18n = inject(I18nService);
   protected readonly svc = inject(LinkService);
+  private readonly insights = inject(InsightsService);
+  protected readonly isYoutube = isYoutube;
+  protected readonly suggestion = computed(() => {
+    const url = normalizeUrl(this.url());
+    if (!url) return null;
+    return courseSuggestion({
+      ...this.link(),
+      id: '',
+      url,
+      title: this.title(),
+      tags: parseTags(this.tagsInput()),
+      category: this.category(),
+      kind: this.isSite() ? 'site' : 'link',
+      deletedAt: null,
+      library: this.library(),
+    } as Link);
+  });
+  protected suggestCourse() {
+    const category = this.suggestion();
+    if (!category) return;
+    this.setCategory(category);
+    this.library.update((l) => ({ ...l, resourceType: 'course' }));
+  }
+  protected readonly availableDescription = computed(() => {
+    const l = this.link();
+    const insight = l ? this.insights.records()[l.id] : undefined;
+    return insight?.url === this.url() ? insight.description : '';
+  });
+  protected useDescription() {
+    this.library.update((l) => ({ ...l, description: this.availableDescription() }));
+  }
 
   readonly link = input<Link | undefined>(undefined);
   readonly saved = output<Link>();
@@ -151,6 +186,7 @@ export class LinkForm implements OnInit {
     }
     // Pré-remplissage par le bookmarklet / Raccourci iOS : ?url=…&title=… (affiché via {{ }}, jamais en HTML brut)
     const p = new URLSearchParams(window.location.search);
+    if (p.get('source')) this.setSource(p.get('source')!);
     const u = p.get('url');
     if (u) {
       this.setUrl(u);
